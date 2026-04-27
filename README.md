@@ -232,8 +232,8 @@ The canonical preamble is embedded directly in `SKILL.md` (Step 2). The
 ### From source
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/latex-skill.git
-cd latex-skill
+git clone https://github.com/hameefy/claude-latex-skill.git
+cd claude-latex-skill
 # Then install via Claude Code:
 claude skill install .
 ```
