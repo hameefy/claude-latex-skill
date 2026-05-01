@@ -1,5 +1,6 @@
-# LaTeX Skill for Claude
+![LaTeX Skill for Claude](banner.svg)
 
+# LaTeX Skill for Claude
 A Claude skill for producing high-quality, immediately compilable LaTeX output in
 computational and applied mathematics. Designed for researchers who work with formal
 theorem–proof structures, optimisation algorithms, convergence analysis, numerical
