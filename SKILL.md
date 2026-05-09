@@ -2,15 +2,16 @@
 name: latex
 description: >
   Produce high-quality, compilable LaTeX for researchers in computational and applied
-  mathematics. Trigger whenever the user requests a theorem, lemma, proposition, corollary,
-  definition, proof, convergence analysis, algorithm pseudocode, numerical results table,
-  TikZ figure, derivation, literature review, or any structured academic document. Also
-  trigger for "write up", "typeset", "format in LaTeX", "produce a .tex file",
+  mathematics. Trigger for theorems, proofs, convergence analysis, algorithms, tables,
+  TikZ figures, derivations, literature reviews, or any structured academic document.
+  Also trigger for "write up", "typeset", "format in LaTeX", "produce a .tex file",
   "generate a report", or "give me the LaTeX for". Covers numerical optimisation, deep
-  learning theory, EIT, regularisation, PINNs, and numerical analysis. Output must be
-  immediately compilable, mathematically rigorous, and free of AI-characteristic phrasing.
-  Two modes: (1) DOCUMENT MODE — full standalone .tex file; (2) SNIPPET MODE — raw body-only
-  LaTeX for fragments to paste into the user's own template.
+  learning theory, EIT, regularisation, PINNs, and numerical analysis. Three modes:
+  (1) DOCUMENT MODE — full standalone article .tex file; (2) SNIPPET MODE — body-only
+  fragments; (3) BEAMER MODE — complete Beamer presentation slides. ALWAYS trigger
+  BEAMER MODE for "slides", "presentation", "beamer", "seminar talk", "conference talk",
+  "slide deck", or "talk on [topic]". Output is immediately compilable, mathematically
+  rigorous, and free of AI-characteristic phrasing.
 ---
 
 # LaTeX Skill
@@ -26,12 +27,35 @@ Journal of Computational Physics.
 
 ## Step 1. Classify the Request
 
-Before writing anything, determine which of the two output modes applies.
+Before writing anything, determine which of the **three** output modes applies.
+Check for BEAMER MODE first, since it has the strongest surface signals.
+
+### Beamer Mode  ← CHECK THIS FIRST
+
+Produce a complete Beamer presentation (`.tex` file with `\documentclass{beamer}`) when
+the request contains any of:
+
+- The words "slides", "presentation", "beamer", "slide deck", "talk", "seminar",
+  "conference talk", or "present my work on".
+- A request to prepare a talk from a manuscript, paper draft, or set of results.
+- A request for a "title slide", "table of contents slide", or named academic sections
+  such as "introduction slide", "convergence results slide", "numerical experiments slide".
+
+Proceed to **Step 2B** for the beamer preamble and **Step 3B** for beamer content rules.
+Do NOT use the article preamble (Step 2) or article document structure (Step 4) for
+Beamer Mode output.
+
+**Content sourcing for Beamer Mode:**
+- If the user supplies a complete manuscript or paper: extract content from it faithfully
+  to populate each slide section.
+- If the user supplies only a title, abstract, or partial notes: generate a fully
+  structured template with `\todo{}` placeholders in every slide that lacks content.
+- Never fabricate theorems, lemmas, or numerical results that were not provided.
 
 ### Document Mode
 
-Produce a complete, standalone `.tex` file (preamble through `\end{document}`) when the
-request involves any of the following:
+Produce a complete, standalone `.tex` file (preamble through `\end{document}`) using
+`\documentclass{article}` when the request involves:
 
 - A theorem, lemma, proposition, corollary, definition, or remark, with or without proof.
 - A multi-step derivation or mathematical argument.
@@ -56,8 +80,8 @@ Produce raw LaTeX body content only (no `\documentclass`, no preamble, no
 Deliver snippet output as a labelled code block in the chat, not as a file, unless the
 user explicitly requests a file.
 
-**When in doubt**, ask: "Should I produce a complete standalone document, or a snippet to
-paste into your template?"
+**When in doubt**, ask: "Should I produce a complete standalone document, a snippet, or a
+Beamer presentation?"
 
 ---
 
@@ -198,6 +222,335 @@ Use the preamble below verbatim. Do not improvise or abbreviate it.
 \newcommand{\xk}{x_k}
 \newcommand{\alphak}{\alpha_k}
 \newcommand{\etak}{\eta_k}
+```
+
+---
+
+## Step 2B. Beamer Preamble (Beamer Mode Only)
+
+Use the preamble below for ALL Beamer presentations. Do NOT mix with the article preamble
+in Step 2. The two preambles are mutually exclusive.
+
+**Theme selection:** The default theme is `Madrid`. If the user specifies a different
+standard theme (e.g., `Berlin`, `AnnArbor`, `Warsaw`, `Copenhagen`, `Frankfurt`,
+`Singapore`, `Boadilla`, `CambridgeUS`), substitute it in `\usetheme{}`. Never invent
+custom themes; use only named Beamer built-in themes.
+
+**Color theme:** Default is `default` (matching the chosen outer theme's palette). If the
+user requests a specific color theme (e.g., `dolphin`, `beaver`, `crane`, `orchid`,
+`rose`, `seagull`, `seahorse`, `whale`, `wolverine`), apply it with `\usecolortheme{}`.
+
+```latex
+\documentclass[aspectratio=169,10pt]{beamer}
+% aspectratio=169 gives 16:9 widescreen; use 43 for 4:3 if user requests it.
+
+% ---------------------------------------------------------------
+% Theme — change \usetheme{} to any standard Beamer theme name
+% ---------------------------------------------------------------
+\usetheme{Madrid}
+% \usecolortheme{dolphin}   % Uncomment and change to apply a colour theme
+
+% ---------------------------------------------------------------
+% Core mathematics
+% ---------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}
+
+% ---------------------------------------------------------------
+% Algorithms — use ONE of the two options below; comment out the other
+% ---------------------------------------------------------------
+% OPTION A: algorithm2e (recommended for pseudocode with line numbers)
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+
+% OPTION B: algorithmicx + algpseudocode (uncomment if preferred)
+% \usepackage{algorithmic}
+% \usepackage{algorithmicx}
+% \usepackage{algpseudocode}
+
+% ---------------------------------------------------------------
+% Graphics and plots
+% ---------------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{subfigure}
+
+% ---------------------------------------------------------------
+% Tables
+% ---------------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+% ---------------------------------------------------------------
+% Theorem-like blocks — configurable style
+% ---------------------------------------------------------------
+% Beamer provides: theorem, lemma, corollary, proof, definition,
+% example, block, alertblock, exampleblock — all built-in.
+%
+% For coloured framed boxes (tcolorbox style), uncomment below:
+% \usepackage{tcolorbox}
+% \tcbuselibrary{theorems,skins}
+% Then define custom tcolorbox environments as needed (see Step 3B).
+
+% ---------------------------------------------------------------
+% Footnote citation control
+% ---------------------------------------------------------------
+\usepackage{perpage}   % resets footnote counter on each slide
+\MakePerPage{footnote}
+
+% ---------------------------------------------------------------
+% Miscellaneous
+% ---------------------------------------------------------------
+\usepackage{xcolor}
+\usepackage{multicol}  % for two-column slides
+
+% ---------------------------------------------------------------
+% Notation macros (shared with article mode for consistency)
+% ---------------------------------------------------------------
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\ip}[2]{\left\langle #1,\, #2 \right\rangle}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\grad}{\nabla}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\bigO}[1]{\mathcal{O}\!\left(#1\right)}
+\newcommand{\xk}{x_k}
+\newcommand{\alphak}{\alpha_k}
+\newcommand{\etak}{\eta_k}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bg}{\mathbf{g}}
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bJ}{\mathbf{J}}
+
+% ---------------------------------------------------------------
+% Presentation metadata — fill in before \begin{document}
+% ---------------------------------------------------------------
+\title[Short Title]{Full Title of the Presentation}
+\subtitle{Subtitle or Paper Title (if applicable)}
+\author[H.~Mohammad]{Hassan Mohammad}
+\institute[BUK]{%
+  Numerical Optimisation Research Group\\
+  Department of Mathematical Sciences\\
+  Faculty of Physical Sciences\\
+  Bayero University, Kano, Nigeria
+}
+\date{\today}
+```
+
+---
+
+## Step 3B. Beamer Content Standards (Beamer Mode Only)
+
+### 3B.1 Section Structure — Flexible Defaults
+
+The eight sections below are the default scaffold. The user may omit any section or
+reorder them. When a section is omitted, remove its `\section{}` declaration and all
+corresponding frames. Never leave an empty `\section{}` block.
+
+| # | Section | `\section{}` name | Typical frame count |
+|---|---|---|---|
+| 1 | Title page | *(title frame, no section)* | 1 |
+| 2 | Table of contents | *(TOC frame, no section)* | 1 |
+| 3 | Introduction | `Introduction` | 2–3 |
+| 4 | Literature review / Related work / Motivation | `Related Work` | 2–3 |
+| 5 | Method / Algorithm | `Methodology` | 3–5 |
+| 6 | Convergence results | `Convergence Analysis` | 2–4 |
+| 7 | Implementation / Numerical experiments | `Numerical Experiments` | 2–3 |
+| 8 | Conclusion / Further research | `Conclusion` | 1–2 |
+
+If the user provides only a title or partial content, generate all eight sections with
+`\todo{}` placeholder text inside each frame body. If the user provides a full manuscript,
+populate each section from the manuscript, preserving mathematical notation exactly.
+
+### 3B.2 Footnote Citations
+
+Beamer Mode uses `\footnotemark` / `\footnotetext{}` pairs exclusively. There is NO
+reference section at the end of the presentation; every cited source appears as a
+footnote on the slide where it is first cited.
+
+**Citation pattern — use verbatim:**
+
+```latex
+% Within slide body text, place the mark:
+...as shown by La Cruz et al.\footnotemark{}...
+
+% Immediately before \end{frame}, place the text:
+\footnotetext{W.~La Cruz, J.~Mart\'{\i}nez, and M.~Raydan,
+  ``Spectral residual method without gradient information for solving large-scale
+  nonlinear systems of equations,''
+  \textit{Math.\ Comp.}, vol.~75, no.~255, pp.~1429--1448, 2006.}
+```
+
+Rules for footnote citations:
+1. Every `\footnotemark` must have a matching `\footnotetext` within the same `frame`.
+2. Use `\MakePerPage{footnote}` (already in the preamble) so the counter resets per slide.
+3. If more than two references appear on one slide, consider splitting the slide or using
+   a smaller font for the `\footnotetext` entries: `{\tiny \footnotetext{...}}`.
+4. Format: Author(s), ``Title,'' \textit{Journal/Proceedings}, vol., no., pp., Year.
+   For books: Author(s), \textit{Title}, Publisher, Year.
+5. Never list a reference in a `\footnotetext` that does not have a corresponding
+   `\footnotemark` on the same slide.
+6. If the user provides BibTeX keys without full details, supply the correct bibliographic
+   entry from knowledge of the standard literature. If genuinely ambiguous, insert:
+   `\footnotetext{\todo{Fill in full bibliographic details.}}`
+
+### 3B.3 Theorem-like Blocks
+
+**Default (Beamer built-in environments):** Use `\begin{theorem}`, `\begin{lemma}`,
+`\begin{corollary}`, `\begin{definition}`, `\begin{proof}` directly inside frames.
+Beamer styles these automatically with coloured headers matching the chosen theme.
+
+```latex
+\begin{frame}{Convergence Result}
+  \begin{theorem}[Global Convergence]\label{thm:global}
+    Let Assumptions~1 and~2 hold. If $\{x_k\}$ is the sequence generated by
+    Algorithm~1, then
+    \[
+      \lim_{k \to \infty} \|F(x_k)\| = 0.
+    \]
+  \end{theorem}
+  \footnotetext{\todo{Citation if theorem is from a paper.}}
+\end{frame}
+```
+
+**Optional tcolorbox style (activate in preamble):** If the user requests coloured framed
+boxes resembling the sample slides, uncomment the `tcolorbox` lines in the preamble and
+add definitions such as:
+
+```latex
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems,skins}
+\newtcbtheorem[number within=section]{thm}{Theorem}{%
+  colback=blue!5, colframe=blue!40!black,
+  fonttitle=\bfseries}{thm}
+\newtcbtheorem[number within=section]{lem}{Lemma}{%
+  colback=green!5, colframe=green!40!black,
+  fonttitle=\bfseries}{lem}
+```
+
+Do NOT load `tcolorbox` by default; only include it when the user explicitly requests
+coloured framed boxes.
+
+### 3B.4 Algorithm Pseudocode on Slides
+
+Use `algorithm2e` (already loaded) inside a `frame` with `[fragile]` option, because
+verbatim-like environments require it.
+
+```latex
+\begin{frame}[fragile]{Algorithm: Name of Algorithm}
+  \begin{algorithm}[H]
+  \caption{AlgorithmName}\label{alg:main}
+  \KwIn{Initial point $x_0 \in \R^n$, tolerance $\varepsilon > 0$}
+  \KwOut{Approximate solution $x^*$}
+  Set $k \leftarrow 0$\;
+  \While{$\|F(x_k)\| > \varepsilon$}{
+    Compute search direction $d_k$\;
+    Find steplength $\alpha_k$ via line search\;
+    $x_{k+1} \leftarrow x_k + \alpha_k d_k$\;
+    $k \leftarrow k + 1$\;
+  }
+  \Return{$x_k$}\;
+  \end{algorithm}
+\end{frame}
+```
+
+If using `algorithmicx` instead, the frame must also be `[fragile]`:
+
+```latex
+\begin{frame}[fragile]{Algorithm: Name}
+  \begin{algorithmic}[1]
+    \Require $x_0$, $\varepsilon > 0$
+    \Ensure $x^*$
+    \For{$k = 0, 1, 2, \ldots$}
+      \State Compute $d_k$
+      \State $x_{k+1} \leftarrow x_k + \alpha_k d_k$
+    \EndFor
+  \end{algorithmic}
+\end{frame}
+```
+
+### 3B.5 Performance Profile and Numerical Results Slides
+
+For numerical experiments, use a two-column layout to show profiles and tables side by
+side:
+
+```latex
+\begin{frame}{Numerical Results — Performance Profiles}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{figure}
+        \includegraphics[width=\linewidth]{fig_iterations.pdf}
+        \caption{Number of iterations}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{figure}
+        \includegraphics[width=\linewidth]{fig_fevals.pdf}
+        \caption{Function evaluations}
+      \end{figure}
+    \end{column}
+  \end{columns}
+  \vspace{0.3em}
+  {\small Dolan--Mor\'{e} performance profiles; higher is better.}
+\end{frame}
+```
+
+For tables of numerical results:
+
+```latex
+\begin{frame}{Numerical Results — Comparison Table}
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{lrrr}
+      \toprule
+      Method & Iter. & F-Evals & CPU (s) \\
+      \midrule
+      Method A & 42 & 89 & \textbf{0.31} \\
+      Method B & \textbf{38} & \textbf{76} & 0.45 \\
+      \bottomrule
+    \end{tabular}
+    \caption{Comparison on test problems ($n = 1000$).}
+  \end{table}
+\end{frame}
+```
+
+### 3B.6 Frame Construction Rules
+
+1. Every frame must have a non-empty `\frametitle{}` argument (or use the `{Title}` short
+   form of `\begin{frame}{Title}`).
+2. Never overload a single frame; limit each slide to one main idea, result, or algorithm
+   step. If content overflows, split into multiple frames with the same section and a
+   subtitle distinguishing them (e.g., "Proof — Part I", "Proof — Part II").
+3. Use `\pause` sparingly; prefer complete slides for printed handouts.
+4. Use `\alert{}` to highlight a single key term or result per frame, not multiple items.
+5. Use `\begin{itemize}` / `\begin{enumerate}` with no more than five items per frame.
+   Sub-items are allowed but limit nesting to two levels.
+6. Equations on slides must be display-style whenever they span more than a short inline
+   fragment. Prefer `\[ ... \]` over inline `$ ... $` for anything non-trivial.
+7. Every frame that cites a source must have at least one `\footnotemark` and its
+   matching `\footnotetext` (see Section 3B.2).
+
+### 3B.7 Table of Contents Slide
+
+Use `\tableofcontents` with `[hideallsubsections]` to show only section-level entries.
+For a long talk, use `[currentsection]` at the start of each section to re-show the TOC
+with the current section highlighted.
+
+```latex
+% Main TOC slide (after title)
+\begin{frame}{Outline}
+  \tableofcontents[hideallsubsections]
+\end{frame}
+
+% Optional: section-entry TOC slide at the start of each section
+\AtBeginSection[]{
+  \begin{frame}{Outline}
+    \tableofcontents[currentsection, hideallsubsections]
+  \end{frame}
+}
 ```
 
 ---
@@ -959,6 +1312,360 @@ Replace all placeholder text with actual content.
 
 \end{document}
 ```
+
+---
+
+## Step 10B. Complete Beamer Presentation Template (Beamer Mode Only)
+
+This is the canonical full-file scaffold for a Beamer presentation. Populate every
+section from the user's manuscript or insert `\todo{}` placeholders for missing content.
+Omit or reorder any section the user does not need (see Section 3B.1 for the section
+table). Compile with `pdflatex` (two passes to resolve cross-references).
+
+```latex
+\documentclass[aspectratio=169,10pt]{beamer}
+
+% ---------------------------------------------------------------
+% Theme — substitute any standard Beamer theme name
+% ---------------------------------------------------------------
+\usetheme{Madrid}
+% \usecolortheme{dolphin}
+
+% ---------------------------------------------------------------
+% Core mathematics
+% ---------------------------------------------------------------
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}
+
+% ---------------------------------------------------------------
+% Algorithms
+% ---------------------------------------------------------------
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+
+% ---------------------------------------------------------------
+% Graphics
+% ---------------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{subfigure}
+
+% ---------------------------------------------------------------
+% Tables
+% ---------------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+% ---------------------------------------------------------------
+% Footnote citation control
+% ---------------------------------------------------------------
+\usepackage{perpage}
+\MakePerPage{footnote}
+
+% ---------------------------------------------------------------
+% Miscellaneous
+% ---------------------------------------------------------------
+\usepackage{xcolor}
+\usepackage{multicol}
+
+% ---------------------------------------------------------------
+% Notation macros
+% ---------------------------------------------------------------
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\ip}[2]{\left\langle #1,\, #2 \right\rangle}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\grad}{\nabla}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\bigO}[1]{\mathcal{O}\!\left(#1\right)}
+\newcommand{\xk}{x_k}
+\newcommand{\alphak}{\alpha_k}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bJ}{\mathbf{J}}
+
+% ---------------------------------------------------------------
+% Presentation metadata
+% ---------------------------------------------------------------
+\title[Short Title]{Full Title of the Presentation}
+\subtitle{Subtitle or Paper Title (if applicable)}
+\author[H.~Mohammad]{Hassan Mohammad}
+\institute[BUK]{%
+  Numerical Optimisation Research Group\\
+  Department of Mathematical Sciences\\
+  Faculty of Physical Sciences\\
+  Bayero University, Kano, Nigeria
+}
+\date{\today}
+
+% ---------------------------------------------------------------
+% Optional: re-show TOC at each section start
+% ---------------------------------------------------------------
+% \AtBeginSection[]{
+%   \begin{frame}{Outline}
+%     \tableofcontents[currentsection, hideallsubsections]
+%   \end{frame}
+% }
+
+\begin{document}
+
+% =============================================================
+% FRAME 1 — Title Page
+% =============================================================
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% =============================================================
+% FRAME 2 — Table of Contents
+% =============================================================
+\begin{frame}{Outline}
+  \tableofcontents[hideallsubsections]
+\end{frame}
+
+% =============================================================
+% SECTION 1: Introduction
+% =============================================================
+\section{Introduction}
+
+\begin{frame}{Introduction}
+  \begin{itemize}
+    \item \todo{State the problem and its practical or theoretical motivation.}
+    \item \todo{Describe the specific problem considered in this work.}
+    \item \todo{Outline the main contributions.}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Problem Formulation}
+  We consider the problem of finding $x^* \in \R^n$ such that
+  \[
+    F(x^*) = 0,
+  \]
+  where $F \colon \R^n \to \R^n$ \todo{[describe properties of $F$]}.
+
+  The iterative scheme has the form
+  \[
+    x_{k+1} = x_k + \alphak d_k, \quad k = 0, 1, 2, \ldots,
+  \]
+  where $\alphak > 0$ is the steplength and $d_k$ is the search direction.
+\end{frame}
+
+% =============================================================
+% SECTION 2: Related Work / Literature Review / Motivation
+% =============================================================
+\section{Related Work}
+
+\begin{frame}{Related Work}
+  \begin{itemize}
+    \item \todo{Author(s) (Year)\footnotemark{} — brief description of contribution.}
+    \item \todo{Author(s) (Year)\footnotemark{} — brief description.}
+    \item \todo{Author(s) (Year)\footnotemark{} — brief description.}
+  \end{itemize}
+  \footnotetext{\todo{Full citation 1.}}
+  \footnotetext{\todo{Full citation 2.}}
+  \footnotetext{\todo{Full citation 3.}}
+\end{frame}
+
+\begin{frame}{Motivation and Gap}
+  \begin{itemize}
+    \item \todo{Identify the limitation in existing methods that this work addresses.}
+    \item \todo{State why the proposed approach is needed.}
+  \end{itemize}
+\end{frame}
+
+% =============================================================
+% SECTION 3: Methodology / Algorithm
+% =============================================================
+\section{Methodology}
+
+\begin{frame}{Assumptions}
+  \begin{block}{Assumption 1}
+    \todo{State Assumption 1 precisely (e.g., Lipschitz continuity of $F$).}
+  \end{block}
+  \vspace{0.5em}
+  \begin{block}{Assumption 2}
+    \todo{State Assumption 2 precisely (e.g., boundedness of the Jacobian).}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Search Direction}
+  The search direction $d_k$ is defined by
+  \[
+    d_k = \begin{cases}
+      \todo{[initial direction]}, & k = 0, \\
+      \todo{[recursive formula]}, & k \geq 1,
+    \end{cases}
+  \]
+  where \todo{define all parameters}.
+\end{frame}
+
+\begin{frame}[fragile]{Algorithm}
+  \begin{algorithm}[H]
+  \caption{\todo{AlgorithmName}}\label{alg:main}
+  \KwIn{\todo{Inputs: initial point, tolerances, parameters}}
+  \KwOut{\todo{Output}}
+  Set $k \leftarrow 0$\;
+  \While{$\norm{F(x_k)} > \varepsilon$}{
+    Compute search direction $d_k$\;
+    Find steplength $\alphak$ via line search\;
+    $x_{k+1} \leftarrow x_k + \alphak d_k$\;
+    $k \leftarrow k + 1$\;
+  }
+  \Return{$x_k$}\;
+  \end{algorithm}
+\end{frame}
+
+% =============================================================
+% SECTION 4: Convergence Analysis
+% =============================================================
+\section{Convergence Analysis}
+
+\begin{frame}{Preliminary Lemmas}
+  \begin{lemma}\label{lem:prelim1}
+    \todo{State Lemma 1.}
+  \end{lemma}
+  \vspace{0.5em}
+  \begin{lemma}\label{lem:prelim2}
+    \todo{State Lemma 2.}
+  \end{lemma}
+\end{frame}
+
+\begin{frame}{Main Convergence Theorem}
+  \begin{theorem}[Global Convergence]\label{thm:global}
+    \todo{Under Assumptions 1 and 2, if $\{x_k\}$ is generated by the algorithm, then
+    state the convergence result.}
+  \end{theorem}
+  \vspace{0.5em}
+  \begin{proof}[Proof sketch]
+    \todo{Outline the main steps of the proof.}
+  \end{proof}
+\end{frame}
+
+\begin{frame}{Rate of Convergence}
+  \begin{theorem}[R-linear Convergence]\label{thm:rate}
+    \todo{State the rate-of-convergence theorem. For example:
+    there exist $C > 0$ and $\mu \in (0,1)$ such that
+    $\norm{x_k - x^*} \leq C\mu^k$.}
+  \end{theorem}
+\end{frame}
+
+% =============================================================
+% SECTION 5: Numerical Experiments
+% =============================================================
+\section{Numerical Experiments}
+
+\begin{frame}{Experimental Setup}
+  \begin{itemize}
+    \item \todo{Describe the test problems, dimension, and parameter settings.}
+    \item \todo{List the competing methods.}
+    \item \todo{State the stopping criterion and hardware/software details.}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Performance Profiles}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{figure}
+        \includegraphics[width=\linewidth]{\todo{fig\_iterations}}
+        \caption{Number of iterations}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{figure}
+        \includegraphics[width=\linewidth]{\todo{fig\_fevals}}
+        \caption{Function evaluations}
+      \end{figure}
+    \end{column}
+  \end{columns}
+  {\small Dolan--Mor\'{e} performance profiles;\footnotemark{} higher curve = better.}
+  \footnotetext{E.~D.~Dolan and J.~J.~Mor\'{e},
+    ``Benchmarking optimization software with performance profiles,''
+    \textit{Math.\ Program.}, vol.~91, no.~2, pp.~201--213, 2002.}
+\end{frame}
+
+\begin{frame}{Results Summary}
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{lrrr}
+      \toprule
+      Method & Iter. & F-Evals & CPU (s) \\
+      \midrule
+      \todo{Method A} & \todo{--} & \todo{--} & \todo{--} \\
+      \todo{Method B} & \todo{--} & \todo{--} & \todo{--} \\
+      \bottomrule
+    \end{tabular}
+    \caption{\todo{Caption describing the table.}}
+  \end{table}
+\end{frame}
+
+% =============================================================
+% SECTION 6: Conclusion / Further Research
+% =============================================================
+\section{Conclusion}
+
+\begin{frame}{Concluding Remarks}
+  \begin{itemize}
+    \item \todo{Summarise what was presented.}
+    \item \todo{State the main theoretical guarantee established.}
+    \item \todo{Comment on practical performance.}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Future Research Questions}
+  \begin{enumerate}
+    \item \todo{Open question 1.}
+    \item \todo{Open question 2.}
+    \item \todo{Open question 3.}
+  \end{enumerate}
+\end{frame}
+
+% =============================================================
+% CLOSING FRAME
+% =============================================================
+\begin{frame}[plain]
+  \begin{center}
+    {\Large \textbf{Thank You}}\\[1em]
+    \todo{Author name}\\
+    \texttt{\todo{email@institution.edu}}
+  \end{center}
+\end{frame}
+
+\end{document}
+```
+
+---
+
+## Step 10C. Beamer Pre-Output Quality Checklist (Beamer Mode Only)
+
+Run through all items below before delivering the final Beamer `.tex` file.
+
+### Compilability
+- `\documentclass{beamer}` is present; NOT `\documentclass{article}`.
+- The `perpage` package is loaded and `\MakePerPage{footnote}` is called.
+- Every frame with `algorithm2e` or verbatim content uses `[fragile]`.
+- No `geometry`, `cleveref`, or `natbib` packages are loaded (incompatible with beamer).
+
+### Frame Structure
+- Every `\begin{frame}` has a matching `\end{frame}`.
+- Every frame has a non-empty title (`\begin{frame}{Title}` or `\frametitle{}`).
+- No frame contains more than five itemize entries at the top level.
+- No frame body exceeds approximately 10 lines of display content (split if necessary).
+
+### Footnote Citation Consistency
+- Every `\footnotemark` on a slide has a matching `\footnotetext` within the SAME frame.
+- No `\footnotetext` is present without a corresponding `\footnotemark` on the same slide.
+- No bibliography section (`\begin{thebibliography}`, `\printbibliography`) is present.
+
+### Mathematical Correctness
+- All macros used in the body are defined in the preamble.
+- Same notation used throughout; no silent symbol reassignment between frames.
+- Every theorem, lemma, and definition that comes from the user's manuscript is reproduced
+  faithfully; no content is fabricated.
+
+### Placeholder Hygiene
+- All `\todo{}` markers represent genuinely missing information (not leftover from
+  copy-paste). If the user provided the content, it must appear — not a `\todo{}`.
 
 ---
 
