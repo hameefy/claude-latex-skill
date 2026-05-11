@@ -1,28 +1,40 @@
-<svg width="1280" height="420" viewBox="0 0 680 220" role="img" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<title>LaTeX Skill for Claude — README hero banner</title>
-<desc>Dark navy hero banner for the claude-latex-skill GitHub repository by Hassan Mohammad (hameefy).</desc>
+<svg width="100%" viewBox="0 0 900 220" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>LaTeX Skill for Claude — by Hameefy</title>
+<desc>Banner for the open-source Claude LaTeX Skill. Compilable LaTeX for mathematics — theorems, proofs, algorithms, Beamer slides, tables, TikZ figures and more.</desc>
 
-<rect x="0" y="0" width="680" height="220" fill="#042C53" rx="8"/>
-<rect x="0" y="0" width="5" height="220" fill="#1D9E75" rx="2"/>
+<defs>
+  <clipPath id="bannerClip">
+    <rect width="900" height="220" rx="10"/>
+  </clipPath>
+</defs>
 
-<text x="28" y="34" font-family="sans-serif" font-size="10" font-weight="500" fill="#5DCAA5" letter-spacing="1.2">CLAUDE SKILLS  ·  BY HAMEEFY</text>
+<rect width="900" height="220" rx="10" fill="#0D1B3E"/>
 
-<text x="28" y="82" font-family="sans-serif" font-size="48" font-weight="500" fill="#E6F1FB">LaTeX Skill</text>
-<text x="28" y="122" font-family="sans-serif" font-size="48" font-weight="500" fill="#E6F1FB">for Claude</text>
+<rect x="0" y="0" width="6" height="220" fill="#1DB97A" rx="3"/>
 
-<text x="28" y="146" font-family="sans-serif" font-size="13.5" fill="#5DCAA5">Compilable LaTeX for mathematics — theorems and proofs, algorithms, tables, TikZ figures etc.</text>
+<rect x="6" y="0" width="894" height="220" rx="0" fill="none" stroke="#1A2E5A" stroke-width="1" clip-path="url(#bannerClip)"/>
 
-<rect x="28" y="160" width="90" height="26" rx="13" fill="#185FA5"/>
-<text x="73" y="177" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="500" fill="#E6F1FB">Optimisation</text>
+<text x="28" y="34" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#1DB97A" letter-spacing="2">CLAUDE SKILLS · BY HAMEEFY</text>
 
-<rect x="126" y="160" width="116" height="26" rx="13" fill="#0F6E56"/>
-<text x="184" y="177" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="500" fill="#9FE1CB">Numerical Analysis</text>
+<text x="28" y="82" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="#FFFFFF">LaTeX Skill</text>
+<text x="28" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="#FFFFFF">for Claude</text>
 
-<rect x="250" y="160" width="120" height="26" rx="13" fill="#534AB7"/>
-<text x="310" y="177" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="500" fill="#CECBF6">Deep learning theory</text>
+<text x="28" y="158" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="400" fill="#1DB97A">Compilable LaTeX for mathematics — theorems and proofs, algorithms, Beamer slides, tables, TikZ figures etc.</text>
 
-<text x="28" y="208" font-family="sans-serif" font-size="11" fill="#378ADD">MIT licence  ·  v2.0  ·  github.com/hameefy/claude-latex-skill</text>
+<rect x="28" y="170" width="108" height="26" rx="13" fill="#2A4A8A"/>
+<text x="82" y="187" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle">Optimisation</text>
 
+<rect x="144" y="170" width="132" height="26" rx="13" fill="#0F6E56"/>
+<text x="210" y="187" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle">Numerical Analysis</text>
 
-<text x="500" y="205" font-family="sans-serif" font-size="10" font-weight="500" fill="#378ADD" letter-spacing="1">OPEN SOURCE  ·  FREE TO INSTALL</text>
+<rect x="284" y="170" width="142" height="26" rx="13" fill="#3C3489"/>
+<text x="355" y="187" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle">Deep learning theory</text>
+
+<rect x="434" y="170" width="138" height="26" rx="13" fill="#2A3A6A"/>
+<text x="503" y="187" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle">Beamer slides</text>
+
+<text x="28" y="210" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="400" fill="#4A7FC4">MIT licence · v2.1 · github.com/hameefy/claude-latex-skill</text>
+
+<text x="872" y="210" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#1DB97A" text-anchor="end" letter-spacing="1">OPEN SOURCE · FREE TO INSTALL</text>
+
 </svg>
