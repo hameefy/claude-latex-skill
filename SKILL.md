@@ -1,27 +1,152 @@
 ---
 name: latex
 description: >
-  Produce high-quality, compilable LaTeX for researchers in computational and applied
-  mathematics. Trigger for theorems, proofs, convergence analysis, algorithms, tables,
-  TikZ figures, derivations, literature reviews, or any structured academic document.
-  Also trigger for "write up", "typeset", "format in LaTeX", "produce a .tex file",
-  "generate a report", or "give me the LaTeX for". Covers numerical optimisation, deep
-  learning theory, EIT, regularisation, PINNs, and numerical analysis. Three modes:
-  (1) DOCUMENT MODE — full standalone article .tex file; (2) SNIPPET MODE — body-only
-  fragments; (3) BEAMER MODE — complete Beamer presentation slides. ALWAYS trigger
-  BEAMER MODE for "slides", "presentation", "beamer", "seminar talk", "conference talk",
-  "slide deck", or "talk on [topic]". Output is immediately compilable, mathematically
-  rigorous, and free of AI-characteristic phrasing.
+  Produces compilable LaTeX for researchers in numerical optimisation and applied
+  mathematics. Use for theorems, proofs, convergence analysis, algorithms, tables, TikZ
+  figures, derivations, literature reviews, or structured academic documents, and for
+  requests such as "write up", "typeset", "format in LaTeX", "produce a .tex file", or
+  "give me the LaTeX for". Covers numerical optimisation, nonlinear equations, deep
+  learning theory, and numerical analysis; inverse problems, EIT, and PINNs are
+  supported through an optional reference file. Three modes: (1) DOCUMENT MODE, a full
+  standalone article; (2) SNIPPET MODE, body-only fragments; (3) BEAMER MODE, complete
+  Beamer slides, used for "slides", "presentation", "beamer", "talk", "seminar", "slide
+  deck". Also use when the user supplies a website URL and wants LaTeX output, e.g. "turn
+  this link into LaTeX", "make slides from this page", or "convert this article to a
+  report"; the page is fetched and routed to the correct mode.
 ---
 
 # LaTeX Skill
 
-This skill governs the production of LaTeX output for a researcher in computational and
-applied mathematics whose work spans numerical optimisation, deep learning theory, electrical
-impedance tomography (EIT), regularisation theory, data-driven inversion, numerical analysis,
-PINNs, and related areas. All output must satisfy the mathematical standards of journals such
-as SIAM Journal on Scientific Computing, Inverse Problems, Mathematics of Computation, and
-Journal of Computational Physics.
+This skill governs the production of LaTeX output for researchers in numerical optimisation
+and applied mathematics: unconstrained and constrained optimisation, nonlinear equations,
+conjugate gradient and quasi-Newton methods, stochastic optimisation, deep learning theory,
+and numerical analysis. All output must satisfy the mathematical standards of journals such
+as SIAM Journal on Optimization, Mathematical Programming, Optimization Methods and
+Software, and Mathematics of Computation.
+
+Inverse problems, electrical impedance tomography (EIT), regularisation theory, and PINNs
+are covered by the optional file `references/inverse-problems.md` (notation, macros, and
+reference entries). Read it only when the request concerns those areas. If the file is not
+installed, proceed with the rules in this file.
+
+---
+
+## Step 0. Detect and Ingest Web Content (URL Input)
+
+**Run this step FIRST, before Step 1, whenever the user provides a URL or web link.**
+
+### 0.1 Detect a URL
+
+Treat the request as a URL-sourced request if the user's message contains any of the
+following patterns:
+
+- A URL beginning with `http://` or `https://`.
+- A bare domain reference such as `arxiv.org/abs/...`, `doi.org/...`, or a journal/blog
+  URL that can be resolved.
+- Phrases such as: "from this link", "from this page", "from this article", "from this
+  website", "from this paper online", "convert this URL", or "turn this link into LaTeX".
+
+If **no URL** is detected, skip Step 0 entirely and proceed directly to Step 1.
+
+### 0.2 Fetch the Page
+
+Use whichever web-fetch tool is available in the current environment (its name differs
+between Claude surfaces) to retrieve the page. Pass the URL exactly as provided by the
+user, and request readable text or Markdown output where the tool offers that choice. If
+no fetch tool is available, say so and ask the user to paste the content.
+
+**If the fetch fails** (network error, access denied, paywall, login wall):
+- Inform the user clearly: "I was unable to retrieve the content from `<URL>`. The page
+  may require login, be behind a paywall, or be unavailable."
+- Ask whether the user can paste the content directly into the chat.
+- Do NOT attempt to generate LaTeX from guessed or fabricated content.
+
+**If the fetch partially succeeds** (truncated content, missing sections):
+- Proceed with what was retrieved.
+- Add a `\todo{}` placeholder wherever content appears incomplete or cut off.
+- Mention to the user that the fetched content may be partial.
+
+### 0.3 Analyse and Clean the Fetched Content
+
+Once the page content is retrieved, perform the following analysis before proceeding to
+Step 1:
+
+1. **Identify the content type.** Is the page:
+   - A research paper or preprint (e.g. arXiv, journal article)?
+   - A blog post or technical article?
+   - A documentation page (e.g. library or software docs)?
+   - A lecture notes or course page?
+   - A general web article or news item?
+
+2. **Extract the core structure.** Identify:
+   - Title, authors, date/venue (if a paper or article).
+   - Abstract or executive summary (if present).
+   - Section headings and their content.
+   - Mathematical expressions, algorithms, tables, and figures (note their presence;
+     do NOT fabricate numerical values or theorems not in the source).
+   - References or citations listed on the page.
+
+3. **Filter noise.** Discard: navigation menus, cookie banners, advertisement text,
+   footer boilerplate, comment sections, and any content clearly unrelated to the
+   main article.
+
+4. **Preserve mathematics.** If the page contains mathematical notation (even in
+   informal or non-LaTeX form), transcribe it into proper LaTeX using the macros
+   defined in Step 2 / Step 2B. Do not simplify, omit, or alter mathematical content.
+
+5. **Note source metadata.** Record the following for use in the LaTeX document:
+   - Source URL (for `\url{}` or `\href{}` citation).
+   - Author name(s) if available.
+   - Publication date if available.
+   - Page or document title.
+
+   These will be used to populate the LaTeX `\title{}`, `\author{}`, `\date{}` fields
+   (Document Mode), the Beamer metadata (Beamer Mode), or an inline attribution comment
+   (Snippet Mode).
+
+### 0.4 Clarify the Output Mode (if ambiguous)
+
+After fetching and analysing the content, if the user has not explicitly stated which
+output mode they want, ask ONE clarifying question:
+
+> "I've retrieved the content from `<URL>`. Should I produce:
+> (a) a complete standalone LaTeX document (article),
+> (b) a Beamer slide presentation, or
+> (c) a LaTeX snippet (equations, tables, or algorithm only)?"
+
+If the user's original phrasing already signals the mode (e.g., "make slides from this
+link" → Beamer Mode; "typeset this article" → Document Mode; "give me the LaTeX table
+from this page" → Snippet Mode), proceed without asking.
+
+### 0.5 Hand Off to the Main Pipeline
+
+Once content is fetched, cleaned, and the output mode is known, treat the extracted
+content exactly as if the user had pasted it directly. Proceed to **Step 1** (mode
+classification) and then through the full normal pipeline (Steps 2–10 as appropriate).
+
+**Additional rules for URL-sourced content:**
+
+- **Attribution:** In Document Mode, include a comment near the top of the `.tex` file:
+  ```latex
+  % Source: <URL>
+  % Retrieved: <date of fetch>
+  ```
+  In Beamer Mode, add a `{\tiny\url{<URL>}}` citation on the title or introduction slide.
+  In Snippet Mode, add a `% Source: <URL>` comment above the snippet.
+
+- **No fabrication:** Do not invent theorems, lemmas, numerical results, or citations
+  that do not appear in the fetched content. Use `\todo{}` for any section where the
+  source content is absent or unclear.
+
+- **Copyright note:** Web content is copyrighted. The LaTeX output is a
+  **scholarly reformatting** for academic use. Do not reproduce verbatim large passages
+  of prose from the source; paraphrase into formal academic register where necessary,
+  and preserve mathematics exactly.
+
+- **arXiv and DOI links:** For arXiv links (`https://arxiv.org/abs/NNNN.NNNNN`), also
+  attempt to fetch the abstract page. The PDF itself cannot be fetched directly; if the
+  user wants full paper content, they should supply the PDF as an upload. For DOI links,
+  fetch the resolved landing page.
 
 ---
 
@@ -48,6 +173,9 @@ Beamer Mode output.
 **Content sourcing for Beamer Mode:**
 - If the user supplies a complete manuscript or paper: extract content from it faithfully
   to populate each slide section.
+- If the user supplies a URL (processed via Step 0): use the fetched and cleaned content
+  as the source manuscript. Populate slides from that content; insert `\todo{}` wherever
+  the fetched page did not provide sufficient detail for a slide.
 - If the user supplies only a title, abstract, or partial notes: generate a fully
   structured template with `\todo{}` placeholders in every slide that lacks content.
 - Never fabricate theorems, lemmas, or numerical results that were not provided.
@@ -63,6 +191,8 @@ Produce a complete, standalone `.tex` file (preamble through `\end{document}`) u
 - An algorithm presented alongside its theoretical justification.
 - An introduction, related-work survey, or structured academic section.
 - A self-contained report, technical note, or preprint draft.
+- **Content fetched from a URL (Step 0)** where the user requested a full document or
+  report format.
 
 Save the output as a `.tex` file and present it to the user for download.
 
@@ -76,6 +206,9 @@ Produce raw LaTeX body content only (no `\documentclass`, no preamble, no
 - A numerical results table.
 - A TikZ figure or pgfplots graph.
 - Any fragment intended to be inserted into the user's own template.
+- **Content fetched from a URL (Step 0)** where the user requests only specific elements
+  (e.g. "give me the LaTeX for the table on this page", "typeset just the algorithm from
+  this link").
 
 Deliver snippet output as a labelled code block in the chat, not as a file, unless the
 user explicitly requests a file.
@@ -87,7 +220,9 @@ Beamer presentation?"
 
 ## Step 2. Apply the Standard Preamble (Document Mode Only)
 
-Use the preamble below verbatim. Do not improvise or abbreviate it.
+Use the preamble below verbatim: do not improvise, abbreviate, or reorder the package
+list (`hyperref` must precede `cleveref`). Macros that a document does not use may stay
+in the preamble; they are harmless. Add any further macros after the existing block.
 
 ```latex
 \documentclass[11pt,a4paper]{article}
@@ -97,7 +232,6 @@ Use the preamble below verbatim. Do not improvise or abbreviate it.
 % ---------------------------------------------------------------
 \usepackage{amsmath, amssymb, amsthm, mathtools}
 \usepackage{bm}            % bold math symbols
-\usepackage{dsfont}        % indicator function \mathds{1}
 
 % ---------------------------------------------------------------
 % Algorithms
@@ -111,7 +245,7 @@ Use the preamble below verbatim. Do not improvise or abbreviate it.
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usepackage{subfigure}     % side-by-side figures
+\usepackage{subcaption}    % subfigure environment for side-by-side figures
 \usepackage{adjustbox}     % fallback rescaling for wide TikZ diagrams
 
 % ---------------------------------------------------------------
@@ -213,11 +347,6 @@ Use the preamble below verbatim. Do not improvise or abbreviate it.
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\C}{\mathbb{C}}
 
-% Regularisation (EIT / inverse problems)
-\newcommand{\Reg}{\mathcal{R}}
-\newcommand{\Forward}{\mathcal{F}}
-\newcommand{\Tikhonov}[3]{\norm{#1 - #2}^2 + #3\,\Reg(#2)}
-
 % Iterates and step sizes
 \newcommand{\xk}{x_k}
 \newcommand{\alphak}{\alpha_k}
@@ -236,6 +365,9 @@ standard theme (e.g., `Berlin`, `AnnArbor`, `Warsaw`, `Copenhagen`, `Frankfurt`,
 `Singapore`, `Boadilla`, `CambridgeUS`), substitute it in `\usetheme{}`. Never invent
 custom themes; use only named Beamer built-in themes.
 
+**Author and institute:** replace the placeholders in the metadata block with the user's
+details when they are known; otherwise leave the placeholders in place.
+
 **Color theme:** Default is `default` (matching the chosen outer theme's palette). If the
 user requests a specific color theme (e.g., `dolphin`, `beaver`, `crane`, `orchid`,
 `rose`, `seagull`, `seahorse`, `whale`, `wolverine`), apply it with `\usecolortheme{}`.
@@ -245,7 +377,7 @@ user requests a specific color theme (e.g., `dolphin`, `beaver`, `crane`, `orchi
 % aspectratio=169 gives 16:9 widescreen; use 43 for 4:3 if user requests it.
 
 % ---------------------------------------------------------------
-% Theme — change \usetheme{} to any standard Beamer theme name
+% Theme: change \usetheme{} to any standard Beamer theme name
 % ---------------------------------------------------------------
 \usetheme{Madrid}
 % \usecolortheme{dolphin}   % Uncomment and change to apply a colour theme
@@ -257,14 +389,13 @@ user requests a specific color theme (e.g., `dolphin`, `beaver`, `crane`, `orchi
 \usepackage{bm}
 
 % ---------------------------------------------------------------
-% Algorithms — use ONE of the two options below; comment out the other
+% Algorithms: use ONE of the two options below; comment out the other
 % ---------------------------------------------------------------
 % OPTION A: algorithm2e (recommended for pseudocode with line numbers)
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
 
-% OPTION B: algorithmicx + algpseudocode (uncomment if preferred)
-% \usepackage{algorithmic}
-% \usepackage{algorithmicx}
+% OPTION B: algpseudocode (it loads algorithmicx itself). Never load it together
+% with algorithmic or algorithm2e: these packages define the same commands.
 % \usepackage{algpseudocode}
 
 % ---------------------------------------------------------------
@@ -274,7 +405,6 @@ user requests a specific color theme (e.g., `dolphin`, `beaver`, `crane`, `orchi
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usepackage{subfigure}
 
 % ---------------------------------------------------------------
 % Tables
@@ -283,10 +413,10 @@ user requests a specific color theme (e.g., `dolphin`, `beaver`, `crane`, `orchi
 \usepackage{tabularx}
 
 % ---------------------------------------------------------------
-% Theorem-like blocks — configurable style
+% Theorem-like blocks: configurable style
 % ---------------------------------------------------------------
 % Beamer provides: theorem, lemma, corollary, proof, definition,
-% example, block, alertblock, exampleblock — all built-in.
+% example, block, alertblock, exampleblock; all are built in.
 %
 % For coloured framed boxes (tcolorbox style), uncomment below:
 % \usepackage{tcolorbox}
@@ -296,7 +426,7 @@ user requests a specific color theme (e.g., `dolphin`, `beaver`, `crane`, `orchi
 % ---------------------------------------------------------------
 % Footnote citation control
 % ---------------------------------------------------------------
-\usepackage{perpage}   % resets footnote counter on each slide
+\usepackage{perpage}   % restarts footnote numbers on each slide (needs two runs)
 \MakePerPage{footnote}
 
 % ---------------------------------------------------------------
@@ -304,6 +434,13 @@ user requests a specific color theme (e.g., `dolphin`, `beaver`, `crane`, `orchi
 % ---------------------------------------------------------------
 \usepackage{xcolor}
 \usepackage{multicol}  % for two-column slides
+
+% ---------------------------------------------------------------
+% Placeholder marker: \todo{...} prints a red [TODO: ...] in text or math.
+% (todonotes is not loaded: its margin notes do not work in beamer.)
+% ---------------------------------------------------------------
+\DeclareRobustCommand{\todo}[1]{%
+  \textcolor{red}{\ifmmode\text{[TODO: #1]}\else[TODO: #1]\fi}}
 
 % ---------------------------------------------------------------
 % Notation macros (shared with article mode for consistency)
@@ -325,16 +462,15 @@ user requests a specific color theme (e.g., `dolphin`, `beaver`, `crane`, `orchi
 \newcommand{\bJ}{\mathbf{J}}
 
 % ---------------------------------------------------------------
-% Presentation metadata — fill in before \begin{document}
+% Presentation metadata: fill in before \begin{document}
 % ---------------------------------------------------------------
 \title[Short Title]{Full Title of the Presentation}
 \subtitle{Subtitle or Paper Title (if applicable)}
-\author[H.~Mohammad]{Hassan Mohammad}
-\institute[BUK]{%
-  Numerical Optimisation Research Group\\
-  Department of Mathematical Sciences\\
-  Faculty of Physical Sciences\\
-  Bayero University, Kano, Nigeria
+\author[A.~Surname]{Author Name}
+\institute[Short Inst.]{%
+  Research Group or Department\\
+  Faculty or School\\
+  University, City, Country
 }
 \date{\today}
 ```
@@ -366,35 +502,78 @@ populate each section from the manuscript, preserving mathematical notation exac
 
 ### 3B.2 Footnote Citations
 
-Beamer Mode uses `\footnotemark` / `\footnotetext{}` pairs exclusively. There is NO
-reference section at the end of the presentation; every cited source appears as a
-footnote on the slide where it is first cited.
+Beamer Mode cites sources in footnotes. There is NO reference section at the end of the
+presentation; every cited source appears as a footnote on the slide where it is cited.
 
-**Citation pattern — use verbatim:**
+**Default pattern: `\footnote[frame]{...}` at the point of citation.**
 
 ```latex
-% Within slide body text, place the mark:
-...as shown by La Cruz et al.\footnotemark{}...
-
-% Immediately before \end{frame}, place the text:
-\footnotetext{W.~La Cruz, J.~Mart\'{\i}nez, and M.~Raydan,
-  ``Spectral residual method without gradient information for solving large-scale
-  nonlinear systems of equations,''
-  \textit{Math.\ Comp.}, vol.~75, no.~255, pp.~1429--1448, 2006.}
+\begin{frame}{Related Work}
+  \begin{itemize}
+    \item Spectral residual methods\footnote[frame]{W.~La Cruz, J.~M.~Mart\'{\i}nez, and
+      M.~Raydan, ``Spectral residual method without gradient information for solving
+      large-scale nonlinear systems of equations,'' \textit{Math.\ Comp.}, vol.~75,
+      no.~255, pp.~1429--1448, 2006.} require no derivative information.
+    \item Performance profiles\footnote[frame]{E.~D.~Dolan and J.~J.~Mor\'{e},
+      ``Benchmarking optimization software with performance profiles,''
+      \textit{Math.\ Program.}, vol.~91, no.~2, pp.~201--213, 2002.} are the standard
+      tool for comparing solvers.
+  \end{itemize}
+\end{frame}
 ```
 
+Why this pattern is the default:
+
+- The mark and the text come from one command, so their numbers cannot disagree.
+- The `[frame]` option places the text at the bottom of the slide even when the citation
+  sits inside `columns`, a `block`, or a theorem environment. Without `[frame]`, the
+  footnote is set inside that box.
+- `\MakePerPage{footnote}` (already in the preamble) restarts the numbering at 1 on every
+  slide. The restart is resolved through the `.aux` file, so the deck must be compiled
+  twice.
+
+**Fallback pattern: `\footnotemark` with `\footnotetext[N]{...}`.** Use it only where
+`\footnote` cannot be placed, for instance inside `\caption{}` or a `tabular` cell: put
+`\footnotemark{}` there and the `\footnotetext` after the environment, inside the same
+frame.
+
+A bare `\footnotetext{...}` prints the value that the footnote counter holds at that
+moment. This is standard LaTeX behaviour, not an effect of `perpage`. After three
+`\footnotemark{}` calls the counter equals 3, so three bare `\footnotetext{}` commands
+would all be labelled 3. The file compiles without error and the labels are wrong.
+Therefore, **whenever a slide has two or more `\footnotemark{}` calls, every
+`\footnotetext` must carry the explicit number `[N]` of its mark:**
+
+```latex
+\begin{frame}{Comparison}
+  \begin{tabular}{ll}
+    \toprule
+    Method A\footnotemark{} & description of A \\
+    Method B\footnotemark{} & description of B \\
+    \bottomrule
+  \end{tabular}
+  \footnotetext[1]{Author A, ``Title A,'' \textit{Journal}, vol., pp., Year.}
+  \footnotetext[2]{Author B, ``Title B,'' \textit{Journal}, vol., pp., Year.}
+\end{frame}
+```
+
+With a single mark on the slide, a bare `\footnotetext{...}` is correct.
+
 Rules for footnote citations:
-1. Every `\footnotemark` must have a matching `\footnotetext` within the same `frame`.
-2. Use `\MakePerPage{footnote}` (already in the preamble) so the counter resets per slide.
-3. If more than two references appear on one slide, consider splitting the slide or using
-   a smaller font for the `\footnotetext` entries: `{\tiny \footnotetext{...}}`.
+1. Each citation footnote appears on the frame where the source is cited.
+2. In the fallback pattern, every `\footnotemark` has exactly one `\footnotetext` in the
+   same `frame`, and no `\footnotetext` appears without its mark.
+3. In the fallback pattern with two or more marks on a slide, use `\footnotetext[N]{...}`
+   with the explicit `N` of each mark. Never use bare `\footnotetext{}` there.
 4. Format: Author(s), ``Title,'' \textit{Journal/Proceedings}, vol., no., pp., Year.
    For books: Author(s), \textit{Title}, Publisher, Year.
-5. Never list a reference in a `\footnotetext` that does not have a corresponding
-   `\footnotemark` on the same slide.
-6. If the user provides BibTeX keys without full details, supply the correct bibliographic
-   entry from knowledge of the standard literature. If genuinely ambiguous, insert:
-   `\footnotetext{\todo{Fill in full bibliographic details.}}`
+5. If more than three references appear on one slide, reduce the size *inside* the
+   footnote text: `\footnote[frame]{\tiny ...}` or `\footnotetext[N]{\tiny ...}`.
+   Wrapping the command itself, as in `{\tiny \footnotetext[N]{...}}`, has no effect.
+6. If the user provides BibTeX keys without full details, supply the bibliographic entry
+   only when every field is known with certainty (a well-known book or paper). Never
+   guess a volume, page range, or year. Otherwise insert:
+   `\footnote[frame]{\todo{Fill in full bibliographic details.}}`
 
 ### 3B.3 Theorem-like Blocks
 
@@ -411,7 +590,6 @@ Beamer styles these automatically with coloured headers matching the chosen them
       \lim_{k \to \infty} \|F(x_k)\| = 0.
     \]
   \end{theorem}
-  \footnotetext{\todo{Citation if theorem is from a paper.}}
 \end{frame}
 ```
 
@@ -435,11 +613,13 @@ coloured framed boxes.
 
 ### 3B.4 Algorithm Pseudocode on Slides
 
-Use `algorithm2e` (already loaded) inside a `frame` with `[fragile]` option, because
-verbatim-like environments require it.
+Use `algorithm2e` (already loaded) with the `[H]` placement specifier; floating
+algorithms are not available inside frames. The `[fragile]` frame option is not needed for
+`algorithm2e` or `algpseudocode`; reserve it for frames that contain `verbatim` or
+`listings` content.
 
 ```latex
-\begin{frame}[fragile]{Algorithm: Name of Algorithm}
+\begin{frame}{Algorithm: Name of Algorithm}
   \begin{algorithm}[H]
   \caption{AlgorithmName}\label{alg:main}
   \KwIn{Initial point $x_0 \in \R^n$, tolerance $\varepsilon > 0$}
@@ -456,10 +636,10 @@ verbatim-like environments require it.
 \end{frame}
 ```
 
-If using `algorithmicx` instead, the frame must also be `[fragile]`:
+If the user prefers `algpseudocode` (Option B in the preamble):
 
 ```latex
-\begin{frame}[fragile]{Algorithm: Name}
+\begin{frame}{Algorithm: Name}
   \begin{algorithmic}[1]
     \Require $x_0$, $\varepsilon > 0$
     \Ensure $x^*$
@@ -474,10 +654,11 @@ If using `algorithmicx` instead, the frame must also be `[fragile]`:
 ### 3B.5 Performance Profile and Numerical Results Slides
 
 For numerical experiments, use a two-column layout to show profiles and tables side by
-side:
+side. `\includegraphics` requires the figure files to exist; when the user has not
+supplied them, use the boxed placeholder of Step 10B instead of a file name.
 
 ```latex
-\begin{frame}{Numerical Results — Performance Profiles}
+\begin{frame}{Numerical Results: Performance Profiles}
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \begin{figure}
@@ -500,7 +681,7 @@ side:
 For tables of numerical results:
 
 ```latex
-\begin{frame}{Numerical Results — Comparison Table}
+\begin{frame}{Numerical Results: Comparison Table}
   \begin{table}
     \centering
     \small
@@ -523,15 +704,15 @@ For tables of numerical results:
    form of `\begin{frame}{Title}`).
 2. Never overload a single frame; limit each slide to one main idea, result, or algorithm
    step. If content overflows, split into multiple frames with the same section and a
-   subtitle distinguishing them (e.g., "Proof — Part I", "Proof — Part II").
+   subtitle distinguishing them (e.g., "Proof: Part I", "Proof: Part II").
 3. Use `\pause` sparingly; prefer complete slides for printed handouts.
 4. Use `\alert{}` to highlight a single key term or result per frame, not multiple items.
 5. Use `\begin{itemize}` / `\begin{enumerate}` with no more than five items per frame.
    Sub-items are allowed but limit nesting to two levels.
 6. Equations on slides must be display-style whenever they span more than a short inline
    fragment. Prefer `\[ ... \]` over inline `$ ... $` for anything non-trivial.
-7. Every frame that cites a source must have at least one `\footnotemark` and its
-   matching `\footnotetext` (see Section 3B.2).
+7. Every frame that cites a source carries the citation as a footnote on that frame
+   (see Section 3B.2).
 
 ### 3B.7 Table of Contents Slide
 
@@ -591,11 +772,17 @@ Example with full proof scaffold:
 \end{theorem}
 
 \begin{proof}
-  By $L$-smoothness (\cref{ass:smoothness}), the descent lemma gives
+  By $L$-smoothness (\cref{ass:smoothness}), the descent lemma applied to
+  $x_{k+1} = x_k - \alpha \grad f(x_k)$ with $\alpha \leq 1/L$ gives
   \[
-    f(x_{k+1}) \leq f(x_k) - \frac{1}{2L}\norm{\grad f(x_k)}^2.
+    f(x_{k+1})
+    \leq f(x_k) - \alpha\Bigl(1 - \frac{L\alpha}{2}\Bigr)\norm{\grad f(x_k)}^2
+    \leq f(x_k) - \frac{\alpha}{2}\norm{\grad f(x_k)}^2.
   \]
-  Summing from $k = 0$ to $K-1$ and dividing by $K$ yields \cref{eq:gd-rate}.
+  Summing from $k = 0$ to $K-1$ and using $f(x_K) \geq f^*$ yields
+  $\frac{\alpha}{2}\sum_{k=0}^{K-1}\norm{\grad f(x_k)}^2 \leq f(x_0) - f^*$.
+  Since the minimum of the summands does not exceed their average,
+  \cref{eq:gd-rate} follows.
 \end{proof}
 ```
 
@@ -632,8 +819,9 @@ otherwise.
 | Object | Notation |
 |---|---|
 | Scalars | $\alpha, \beta, \lambda \in \R$ (lowercase italic) |
-| Vectors | $\bx, \by \in \R^n$ (bold lowercase) |
-| Matrices / linear operators | $\bA, \bJ \in \R^{m \times n}$ (bold uppercase) |
+| Vectors | $x, d, g \in \R^n$ (plain lowercase italic, as in the optimisation literature) |
+| Matrices / linear operators | $A, B_k, H_k \in \R^{n \times n}$ (plain uppercase italic) |
+| Bold variants | $\bx$, $\bA$ only when the user's source uses bold; then set every vector and matrix in bold |
 | Function spaces | $\Lp{2}(\Omega)$, $\Sob{1}{\Omega}$, $\SobZ{1}{\Omega}$ |
 | Gradient | $\grad f(x)$ |
 | Hessian | $\Hess f(x)$ |
@@ -641,18 +829,12 @@ otherwise.
 | Objective / loss | $f$, $\mathcal{L}$, or $F$ following the user's choice |
 | Step size | $\alphak$ or $\etak$; do not mix |
 | Regularisation parameter | $\lambda$ or $\mu$ (not $\alpha$ if that is the step size) |
-| Frobenius norm | $\normF{\bA}$ |
+| Frobenius norm | $\normF{A}$ |
 | Expectation | $\E[\cdot]$ |
 | Probability | $\Prob(\cdot)$ |
-| Forward (observation) operator | $\Forward$ |
-| Regulariser | $\Reg$ |
 
-For EIT and inverse problems, adopt the following when not overridden by the user:
-
-- Conductivity distribution: $\sigma \in L^\infty(\Omega)$ with $\sigma \geq \sigma_{\min} > 0$.
-- Dirichlet-to-Neumann map: $\Lambda_\sigma \colon H^{1/2}(\partial\Omega) \to H^{-1/2}(\partial\Omega)$.
-- Measurement data: $\mathbf{V} \in \R^{m \times n_e}$.
-- Tikhonov functional: $\Tikhonov{\Forward(\sigma)}{\mathbf{V}}{\lambda}$ per the macro.
+For EIT and inverse problems, the notation conventions and the macros `\Forward`,
+`\Reg`, and `\Tikhonov` are given in `references/inverse-problems.md`.
 
 ### 3.4 Algorithm Pseudocode
 
@@ -661,20 +843,22 @@ whenever the proof or analysis refers to specific steps. Add inline comments wit
 
 ```latex
 \begin{algorithm}[H]
-\caption{Iteratively Regularised Gauss--Newton (IRGN)}\label{alg:irgn}
-\KwIn{Initial guess $\sigma^{(0)}$; data $\mathbf{V}$;
-      regularisation parameters $\{\lambda_k\}$; tolerance $\varepsilon > 0$}
-\KwOut{Approximate solution $\sigma^{(K)}$}
+\caption{Descent method with backtracking line search}\label{alg:descent}
+\KwIn{Initial point $x_0 \in \R^n$; parameters $\sigma, \rho \in (0,1)$;
+      tolerance $\varepsilon > 0$}
+\KwOut{Approximate stationary point $x_k$}
 Set $k \leftarrow 0$\;
-\While{$\norm{\sigma^{(k+1)} - \sigma^{(k)}} > \varepsilon$}{
-  Compute Jacobian $\bJ_k \leftarrow \Forward'(\sigma^{(k)})$\;
-  \tcp{Solve the linearised regularised subproblem}
-  $\sigma^{(k+1)} \leftarrow \arg\min_{\sigma}
-    \bigl\|\bJ_k(\sigma - \sigma^{(k)}) - (\mathbf{V} - \Forward(\sigma^{(k)}))\bigr\|^2
-    + \lambda_k \Reg(\sigma)$\;
+\While{$\norm{\grad f(x_k)} > \varepsilon$}{
+  Compute a descent direction $d_k$, that is, $\grad f(x_k)^\top d_k < 0$\;
+  \tcp{Armijo backtracking}
+  Set $\alphak \leftarrow 1$\;
+  \While{$f(x_k + \alphak d_k) > f(x_k) + \sigma\alphak \grad f(x_k)^\top d_k$}{
+    $\alphak \leftarrow \rho\,\alphak$\;
+  }
+  $x_{k+1} \leftarrow x_k + \alphak d_k$\;
   $k \leftarrow k + 1$\;
 }
-\Return{$\sigma^{(k)}$}\;
+\Return{$x_k$}\;
 \end{algorithm}
 ```
 
@@ -690,7 +874,7 @@ Rules (apply without exception):
    - Wide (5-7 cols): `tabularx` with `\linewidth`
    - Very wide (8+ cols): `\resizebox{\linewidth}{!}{...}`
 
-Prefer `tabularx` over `\resizebox` wherever possible — rescaling reduces font size relative
+Prefer `tabularx` over `\resizebox` wherever possible: rescaling reduces font size relative
 to surrounding text.
 
 See Section 3.5 examples below:
@@ -699,13 +883,14 @@ See Section 3.5 examples below:
 % Narrow table
 \begin{table}[ht]
 \centering
-\caption{Relative reconstruction error. Bold indicates the lowest error.}\label{tab:relerr}
+\caption{Final gradient norm (mean $\pm$ standard deviation over ten starting points).
+  Bold indicates the lowest value.}\label{tab:gradnorm}
 \begin{tabular}{lccc}
 \toprule
-Method & $\delta = 0.01$ & $\delta = 0.05$ & $\delta = 0.10$ \\
+Method & $n = 10^3$ & $n = 10^4$ & $n = 10^5$ \\
 \midrule
-Tikhonov ($\ell^2$) & $0.142 \pm 0.008$ & $0.231 \pm 0.011$ & $0.318 \pm 0.014$ \\
-TV regularisation   & $\mathbf{0.103 \pm 0.006}$ & $\mathbf{0.187 \pm 0.009}$ & $0.274 \pm 0.013$ \\
+Method A & $0.142 \pm 0.008$ & $0.231 \pm 0.011$ & $0.318 \pm 0.014$ \\
+Method B & $\mathbf{0.103 \pm 0.006}$ & $\mathbf{0.187 \pm 0.009}$ & $\mathbf{0.274 \pm 0.013}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -713,10 +898,10 @@ TV regularisation   & $\mathbf{0.103 \pm 0.006}$ & $\mathbf{0.187 \pm 0.009}$ & 
 % Wide table
 \begin{table}[ht]
 \centering
-\caption{Performance metrics across five noise levels.}\label{tab:perf}
+\caption{Number of iterations across five problem dimensions.}\label{tab:perf}
 \begin{tabularx}{\linewidth}{l *{5}{>{\centering\arraybackslash}X}}
 \toprule
-Method & $\delta_1$ & $\delta_2$ & $\delta_3$ & $\delta_4$ & $\delta_5$ \\
+Method & $n_1$ & $n_2$ & $n_3$ & $n_4$ & $n_5$ \\
 \midrule
 Method A & val & val & val & val & val \\
 \bottomrule
@@ -740,6 +925,10 @@ explicit width using a relative length. Never use absolute `cm` or `pt` values.
 | Three in a row | `\linewidth` inside a `0.32\textwidth` subfigure |
 | Inset or thumbnail | `0.40\textwidth` |
 
+Side-by-side figures use the `subfigure` *environment* of the `subcaption` package (loaded
+in the Step 2 preamble). Never load the obsolete `subfigure` package or `subfig`: their
+`\subfigure{}` and `\subfloat{}` commands are incompatible with `subcaption`.
+
 ```latex
 % Standard convergence plot
 \begin{figure}[ht]
@@ -760,6 +949,22 @@ explicit width using a relative length. Never use absolute `cm` or `pt` values.
 \end{semilogyaxis}
 \end{tikzpicture}
 \caption{Convergence comparison. Vertical axis in logarithmic scale.}\label{fig:convergence}
+\end{figure}
+
+% Two side-by-side subfigures (subcaption package)
+\begin{figure}[ht]
+\centering
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_iterations.pdf}
+  \caption{Number of iterations.}\label{fig:profile-iter}
+\end{subfigure}\hfill
+\begin{subfigure}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{fig_fevals.pdf}
+  \caption{Function evaluations.}\label{fig:profile-fevals}
+\end{subfigure}
+\caption{Performance profiles of the compared methods.}\label{fig:profiles}
 \end{figure}
 
 % Wide diagram fallback
@@ -825,9 +1030,10 @@ Structure:
 Example:
 
 ```latex
-Early work by \citet{calderon1980} established the theoretical basis for EIT.
-Regularisation strategies were studied by \citet{engl1996} and \citet{vogel2002}.
-Data-driven approaches have recently gained attention~\citep{hamilton2018, adler2017}.
+Accelerated first-order methods originate with \citet{nesterov1983}. Line-search and
+trust-region globalisation strategies are treated in detail by \citet{nocedal2006}, and
+the convex theory by \citet{boyd2004}. Adaptive stochastic methods are now standard in
+deep learning~\citep{kingmaba2015, goodfellow2016}.
 ```
 
 ---
@@ -836,9 +1042,10 @@ Data-driven approaches have recently gained attention~\citep{hamilton2018, adler
 
 ### 5.0 Choose a Bibliography Workflow
 
-**Ask the user which workflow they use before writing the reference section.** If no
-preference is stated, default to Option A. The options are architecturally incompatible:
-do not mix commands or packages from both in the same document.
+Default to Option A without asking. Switch to Option B only when the user mentions a
+`.bib` file, BibTeX, BibLaTeX, Biber, or a journal bibliography style. The options are
+architecturally incompatible: do not mix commands or packages from both in the same
+document.
 
 | | Option A — Self-contained | Option B — External `.bib` |
 |---|---|---|
@@ -852,54 +1059,60 @@ do not mix commands or packages from both in the same document.
 Place immediately before `\end{document}`. Set the argument to the widest label expected
 (e.g., `{99}`). Do not include `\bibliographystyle{}` or `\bibliography{}`.
 
+Every `\bibitem` carries the optional `natbib` label `[Authors(Year)]`. Without this
+label `\citet{}` prints "(author?)" in place of the author names. Write `Surname(Year)`
+for one author, `Surname and Surname(Year)` for two, and `Surname et~al.(Year)` for three
+or more, with no space before the opening parenthesis.
+
 #### `\bibitem` Format by Source Type
 
 ```latex
 % Journal article
-\bibitem{citekey}
+\bibitem[Surname and Surname(Year)]{citekey}
 A.~Surname and B.~Surname,
 ``Title,''
 \textit{Journal Name},
 vol.~X, no.~Y, pp.~NNN--NNN, Year.
 
 % Conference paper
-\bibitem{citekey}
+\bibitem[Surname and Surname(Year)]{citekey}
 A.~Surname and B.~Surname,
 ``Title,''
 in \textit{Proceedings of the Conference (ACRONYM)},
 City, Country, Year, pp.~NNN--NNN.
 
 % Book
-\bibitem{citekey}
+\bibitem[Surname(Year)]{citekey}
 A.~Surname,
 \textit{Title of the Book},
 Publisher, City, Year.
 
 % PhD / MSc thesis
-\bibitem{citekey}
+\bibitem[Surname(Year)]{citekey}
 A.~Surname,
 ``Title of the thesis,''
 Ph.D.\ dissertation, Department, University, City, Country, Year.
 
 % Technical report
-\bibitem{citekey}
+\bibitem[Surname(Year)]{citekey}
 A.~Surname,
 ``Title,''
 Tech.\ Rep.\ TR-XXXX, Institution, Year.
 
 % arXiv preprint
-\bibitem{citekey}
+\bibitem[Surname and Surname(Year)]{citekey}
 A.~Surname and B.~Surname,
 ``Title,''
 \textit{arXiv preprint} arXiv:XXXX.XXXXX, Year.
 ```
 
-If the user cites a key without providing bibliographic details, populate from knowledge of
-the standard literature. For well-known works, supply complete and accurate entries. If
-genuinely ambiguous, insert:
+If the user cites a key without providing bibliographic details, supply the entry only
+when every field is known with certainty (a well-known book or paper). Never guess a
+volume, page range, or year, and never invent an entry. When a literature-search or
+citation tool is available, verify the entry with it. Otherwise insert:
 
 ```latex
-\bibitem{citekey}
+\bibitem[TODO(0000)]{citekey}
 \todo{Fill in full bibliographic details for \texttt{citekey}.}
 ```
 
@@ -909,23 +1122,20 @@ Do not omit the `\bibitem`; a missing entry causes a compilation error.
 
 ### Option B1 — BibTeX with `natbib`
 
-Replace the natbib preamble line with:
-
-```latex
-\usepackage[numbers,sort&compress]{natbib}
-```
+Keep the `natbib` line of the Step 2 preamble unchanged.
 
 End-of-document block:
 
 ```latex
-\bibliographystyle{plainnat}   % or: unsrtnat, ieeetr, siam, plain
+\bibliographystyle{plainnat}   % or: abbrvnat, unsrtnat
 \bibliography{refs}
 ```
 
 Compilation: `pdflatex` → `bibtex` → `pdflatex` × 2.
 
-Common `.bst` files: `plainnat` (author-year), `plain` (numbered), `ieeetr` (IEEE),
-`siam` (SIAM), `amsplain` (AMS), `unsrt` (citation order).
+The `natbib`-aware styles `plainnat`, `abbrvnat`, and `unsrtnat` support `\citet{}` and
+`\citep{}`. The classical styles `plain`, `unsrt`, `ieeetr`, `siam`, and `amsplain` carry
+no author data: with them use `\cite{}` only, because `\citet{}` prints "(author?)".
 
 ---
 
@@ -969,8 +1179,8 @@ Sample `.bib` entry:
 }
 ```
 
-If the user cites a key without a `.bib` entry, supply the correct entry from knowledge of
-the standard literature. If genuinely ambiguous, insert:
+If the user cites a key without a `.bib` entry, apply the rule of Option A: supply the
+entry only when every field is known with certainty. Otherwise insert:
 
 ```bibtex
 @misc{citekey,
@@ -1018,7 +1228,7 @@ complete grammatical sentence. Treat the equation as part of the sentence with a
 punctuation.
 
 Define every symbol before or at its first use. When citing a result, state precisely which
-part of the cited work is being used (e.g., `\citet[Theorem~2.1]{engl1996}`). Avoid vague
+part of the cited work is being used (e.g., `\citet[Theorem~3.2]{nocedal2006}`). Avoid vague
 attributions such as "as shown in [3]".
 
 Place quantitative conditions in numbered `assumption` environments rather than burying them
@@ -1027,7 +1237,7 @@ inside theorem statements, whenever those conditions are reusable across multipl
 ### 6.4 Consistency Checks
 
 Before outputting any document, verify:
-1. Every symbol introduced in the preamble is used at least once in the body; remove unused macros.
+1. Every macro used in the body is defined in the preamble. Unused macros of the standard preamble may remain.
 2. The same physical quantity uses the same symbol throughout; no silent switching.
 3. All theorem environments are closed; all proofs end with `\end{proof}`.
 4. Every `\begin{}` has a matching `\end{}`.
@@ -1043,7 +1253,7 @@ Run through all items below before producing the final output.
 - Every `\begin{}` has a matching `\end{}`.
 - No undefined control sequences.
 - All required packages loaded in the preamble.
-- No package conflicts.
+- No package conflicts. `subcaption` is loaded; the obsolete `subfigure` package is not.
 
 ### Label Consistency
 - Every numbered environment has a `\label{}`.
@@ -1062,7 +1272,7 @@ Run through all items below before producing the final output.
 - Proof steps follow logically from stated assumptions.
 
 ### Bibliography Completeness
-- **Option A:** Every `\cite{}` key has a fully populated `\bibitem{}`; no orphan entries.
+- **Option A:** Every `\cite{}` key has a fully populated `\bibitem{}` with its `[Authors(Year)]` label; no orphan entries.
 - **Option B1:** Every cited key exists in the `.bib` file; `\bibliographystyle{}` and `\bibliography{}` present; `biblatex` not loaded.
 - **Option B2:** Every cited key in the `.bib` file; `\printbibliography` present; no `\bibliographystyle{}` or `\bibliography{}`; `natbib` not loaded.
 
@@ -1105,140 +1315,60 @@ mathematics or rename symbols.
 
 ## Step 9. Domain-Specific Reference Entries
 
-The following `\bibitem` entries cover foundational works in EIT, regularisation theory,
-inverse problems, numerical analysis, deep learning, PINNs, and numerical optimisation.
-Insert directly when the corresponding key is cited.
+The following `\bibitem` entries cover foundational works in numerical optimisation, deep
+learning, and numerical analysis. Insert directly when the corresponding key is cited.
+Entries for EIT, regularisation theory, inverse problems, and PINNs are in
+`references/inverse-problems.md`.
 
 ```latex
-% --- Inverse problems and EIT ---
+% --- Numerical optimisation ---
 
-\bibitem{calderon1980}
-A.~P.~Calder\'{o}n,
-``On an inverse boundary value problem,''
-in \textit{Seminar on Numerical Analysis and its Applications to Continuum Physics},
-Rio de Janeiro, Brazil, 1980, pp.~65--73.
-
-\bibitem{cheney1990}
-M.~Cheney, D.~Isaacson, J.~C.~Newell, S.~Simske, and J.~Goble,
-``NOSER: An algorithm for solving the inverse conductivity problem,''
-\textit{International Journal of Imaging Systems and Technology},
-vol.~2, no.~2, pp.~66--75, 1990.
-
-\bibitem{engl1996}
-H.~W.~Engl, M.~Hanke, and A.~Neubauer,
-\textit{Regularization of Inverse Problems},
-Kluwer Academic Publishers, Dordrecht, 1996.
-
-\bibitem{vogel2002}
-C.~R.~Vogel,
-\textit{Computational Methods for Inverse Problems},
-SIAM, Philadelphia, PA, 2002.
-
-\bibitem{kaltenbacher2008}
-B.~Kaltenbacher, A.~Neubauer, and O.~Scherzer,
-\textit{Iterative Regularization Methods for Nonlinear Ill-Posed Problems},
-de Gruyter, Berlin, 2008.
-
-\bibitem{borcea2002}
-L.~Borcea,
-``Electrical impedance tomography,''
-\textit{Inverse Problems},
-vol.~18, no.~6, pp.~R99--R136, 2002.
-
-% --- Regularisation and optimisation ---
-
-\bibitem{tikhonov1943}
-A.~N.~Tikhonov,
-``On the stability of inverse problems,''
-\textit{Doklady Akademii Nauk SSSR},
-vol.~39, no.~5, pp.~195--198, 1943.
-
-\bibitem{rudin1992}
-L.~I.~Rudin, S.~Osher, and E.~Fatemi,
-``Nonlinear total variation based noise removal algorithms,''
-\textit{Physica D: Nonlinear Phenomena},
-vol.~60, no.~1--4, pp.~259--268, 1992.
-
-\bibitem{nesterov1983}
+\bibitem[Nesterov(1983)]{nesterov1983}
 Y.~Nesterov,
 ``A method for solving the convex programming problem with convergence rate
 $\mathcal{O}(1/k^2)$,''
 \textit{Doklady Akademii Nauk SSSR},
 vol.~269, no.~3, pp.~543--547, 1983.
 
-\bibitem{nocedal2006}
+\bibitem[Nocedal and Wright(2006)]{nocedal2006}
 J.~Nocedal and S.~J.~Wright,
 \textit{Numerical Optimization},
 2nd~ed.,
 Springer, New York, NY, 2006.
 
-\bibitem{boyd2004}
+\bibitem[Boyd and Vandenberghe(2004)]{boyd2004}
 S.~Boyd and L.~Vandenberghe,
 \textit{Convex Optimization},
 Cambridge University Press, Cambridge, 2004.
 
-% --- Deep learning for inverse problems ---
+% --- Deep learning ---
 
-\bibitem{adler2017}
-J.~Adler and O.~\"{O}ktem,
-``Solving ill-posed inverse problems using iterative deep neural networks,''
-\textit{Inverse Problems},
-vol.~33, no.~12, p.~124007, 2017.
-
-\bibitem{hamilton2018}
-S.~J.~Hamilton and A.~Hauptmann,
-``Deep d-bar: Real-time electrical impedance tomography imaging with deep
-neural networks,''
-\textit{IEEE Transactions on Medical Imaging},
-vol.~37, no.~10, pp.~2367--2377, 2018.
-
-\bibitem{fan2020}
-Y.~Fan and L.~Ying,
-``Solving traveltime tomography with deep learning,''
-\textit{Research in the Mathematical Sciences},
-vol.~7, no.~3, p.~17, 2020.
-
-\bibitem{kingmaba2015}
+\bibitem[Kingma and Ba(2015)]{kingmaba2015}
 D.~P.~Kingma and J.~Ba,
 ``Adam: A method for stochastic optimization,''
 in \textit{Proceedings of the 3rd International Conference on Learning
 Representations (ICLR)},
 San Diego, CA, USA, 2015.
 
-\bibitem{goodfellow2016}
+\bibitem[Goodfellow et~al.(2016)]{goodfellow2016}
 I.~Goodfellow, Y.~Bengio, and A.~Courville,
 \textit{Deep Learning},
 MIT Press, Cambridge, MA, 2016.
 
-% --- PINNs and scientific machine learning ---
-
-\bibitem{raissi2019}
-M.~Raissi, P.~Perdikaris, and G.~E.~Karniadakis,
-``Physics-informed neural networks: A deep learning framework for solving forward
-and inverse problems involving nonlinear partial differential equations,''
-\textit{Journal of Computational Physics},
-vol.~378, pp.~686--707, 2019.
-
-\bibitem{lagaris1998}
-I.~E.~Lagaris, A.~Likas, and D.~I.~Fotiadis,
-``Artificial neural networks for solving ordinary and partial differential equations,''
-\textit{IEEE Transactions on Neural Networks},
-vol.~9, no.~5, pp.~987--1000, 1998.
-
 % --- Numerical analysis ---
 
-\bibitem{golub2013}
+\bibitem[Golub and Van~Loan(2013)]{golub2013}
 G.~H.~Golub and C.~F.~Van~Loan,
 \textit{Matrix Computations},
 4th~ed.,
 Johns Hopkins University Press, Baltimore, MD, 2013.
 
-\bibitem{trefethen1997}
+\bibitem[Trefethen and Bau(1997)]{trefethen1997}
 L.~N.~Trefethen and D.~Bau,
 \textit{Numerical Linear Algebra},
 SIAM, Philadelphia, PA, 1997.
 
-\bibitem{brenner2008}
+\bibitem[Brenner and Scott(2008)]{brenner2008}
 S.~C.~Brenner and L.~R.~Scott,
 \textit{The Mathematical Theory of Finite Element Methods},
 3rd~ed.,
@@ -1320,83 +1450,13 @@ Replace all placeholder text with actual content.
 This is the canonical full-file scaffold for a Beamer presentation. Populate every
 section from the user's manuscript or insert `\todo{}` placeholders for missing content.
 Omit or reorder any section the user does not need (see Section 3B.1 for the section
-table). Compile with `pdflatex` (two passes to resolve cross-references).
+table). Compile with `pdflatex` twice: cross-references and the per-slide footnote numbers are
+resolved through the `.aux` file.
 
 ```latex
 \documentclass[aspectratio=169,10pt]{beamer}
 
-% ---------------------------------------------------------------
-% Theme — substitute any standard Beamer theme name
-% ---------------------------------------------------------------
-\usetheme{Madrid}
-% \usecolortheme{dolphin}
-
-% ---------------------------------------------------------------
-% Core mathematics
-% ---------------------------------------------------------------
-\usepackage{amsmath, amssymb, amsthm, mathtools}
-\usepackage{bm}
-
-% ---------------------------------------------------------------
-% Algorithms
-% ---------------------------------------------------------------
-\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
-
-% ---------------------------------------------------------------
-% Graphics
-% ---------------------------------------------------------------
-\usepackage{graphicx}
-\usepackage{tikz}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.18}
-\usepackage{subfigure}
-
-% ---------------------------------------------------------------
-% Tables
-% ---------------------------------------------------------------
-\usepackage{booktabs}
-\usepackage{tabularx}
-
-% ---------------------------------------------------------------
-% Footnote citation control
-% ---------------------------------------------------------------
-\usepackage{perpage}
-\MakePerPage{footnote}
-
-% ---------------------------------------------------------------
-% Miscellaneous
-% ---------------------------------------------------------------
-\usepackage{xcolor}
-\usepackage{multicol}
-
-% ---------------------------------------------------------------
-% Notation macros
-% ---------------------------------------------------------------
-\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
-\newcommand{\ip}[2]{\left\langle #1,\, #2 \right\rangle}
-\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
-\newcommand{\grad}{\nabla}
-\newcommand{\R}{\mathbb{R}}
-\newcommand{\E}{\mathbb{E}}
-\newcommand{\bigO}[1]{\mathcal{O}\!\left(#1\right)}
-\newcommand{\xk}{x_k}
-\newcommand{\alphak}{\alpha_k}
-\newcommand{\bx}{\mathbf{x}}
-\newcommand{\bJ}{\mathbf{J}}
-
-% ---------------------------------------------------------------
-% Presentation metadata
-% ---------------------------------------------------------------
-\title[Short Title]{Full Title of the Presentation}
-\subtitle{Subtitle or Paper Title (if applicable)}
-\author[H.~Mohammad]{Hassan Mohammad}
-\institute[BUK]{%
-  Numerical Optimisation Research Group\\
-  Department of Mathematical Sciences\\
-  Faculty of Physical Sciences\\
-  Bayero University, Kano, Nigeria
-}
-\date{\today}
+% [Insert the full preamble from Step 2B here, from \usetheme through \date.]
 
 % ---------------------------------------------------------------
 % Optional: re-show TOC at each section start
@@ -1410,14 +1470,14 @@ table). Compile with `pdflatex` (two passes to resolve cross-references).
 \begin{document}
 
 % =============================================================
-% FRAME 1 — Title Page
+% FRAME 1: Title Page
 % =============================================================
 \begin{frame}
   \titlepage
 \end{frame}
 
 % =============================================================
-% FRAME 2 — Table of Contents
+% FRAME 2: Table of Contents
 % =============================================================
 \begin{frame}{Outline}
   \tableofcontents[hideallsubsections]
@@ -1457,13 +1517,13 @@ table). Compile with `pdflatex` (two passes to resolve cross-references).
 
 \begin{frame}{Related Work}
   \begin{itemize}
-    \item \todo{Author(s) (Year)\footnotemark{} — brief description of contribution.}
-    \item \todo{Author(s) (Year)\footnotemark{} — brief description.}
-    \item \todo{Author(s) (Year)\footnotemark{} — brief description.}
+    \item \todo{Author(s) (Year): brief description of contribution.}%
+      \footnote[frame]{\todo{Full citation 1.}}
+    \item \todo{Author(s) (Year): brief description.}%
+      \footnote[frame]{\todo{Full citation 2.}}
+    \item \todo{Author(s) (Year): brief description.}%
+      \footnote[frame]{\todo{Full citation 3.}}
   \end{itemize}
-  \footnotetext{\todo{Full citation 1.}}
-  \footnotetext{\todo{Full citation 2.}}
-  \footnotetext{\todo{Full citation 3.}}
 \end{frame}
 
 \begin{frame}{Motivation and Gap}
@@ -1499,7 +1559,7 @@ table). Compile with `pdflatex` (two passes to resolve cross-references).
   where \todo{define all parameters}.
 \end{frame}
 
-\begin{frame}[fragile]{Algorithm}
+\begin{frame}{Algorithm}
   \begin{algorithm}[H]
   \caption{\todo{AlgorithmName}}\label{alg:main}
   \KwIn{\todo{Inputs: initial point, tolerances, parameters}}
@@ -1566,21 +1626,25 @@ table). Compile with `pdflatex` (two passes to resolve cross-references).
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \begin{figure}
-        \includegraphics[width=\linewidth]{\todo{fig\_iterations}}
+        % Replace the box with \includegraphics[width=\linewidth]{fig_iterations.pdf}
+        \fbox{\parbox[c][0.45\linewidth][c]{0.9\linewidth}{\centering
+          \todo{Insert fig\_iterations.pdf}}}
         \caption{Number of iterations}
       \end{figure}
     \end{column}
     \begin{column}{0.48\textwidth}
       \begin{figure}
-        \includegraphics[width=\linewidth]{\todo{fig\_fevals}}
+        % Replace the box with \includegraphics[width=\linewidth]{fig_fevals.pdf}
+        \fbox{\parbox[c][0.45\linewidth][c]{0.9\linewidth}{\centering
+          \todo{Insert fig\_fevals.pdf}}}
         \caption{Function evaluations}
       \end{figure}
     \end{column}
   \end{columns}
-  {\small Dolan--Mor\'{e} performance profiles;\footnotemark{} higher curve = better.}
-  \footnotetext{E.~D.~Dolan and J.~J.~Mor\'{e},
-    ``Benchmarking optimization software with performance profiles,''
+  {\small Dolan--Mor\'{e} performance profiles;\footnote[frame]{E.~D.~Dolan and
+    J.~J.~Mor\'{e}, ``Benchmarking optimization software with performance profiles,''
     \textit{Math.\ Program.}, vol.~91, no.~2, pp.~201--213, 2002.}
+    a higher curve is better.}
 \end{frame}
 
 \begin{frame}{Results Summary}
@@ -1643,8 +1707,12 @@ Run through all items below before delivering the final Beamer `.tex` file.
 ### Compilability
 - `\documentclass{beamer}` is present; NOT `\documentclass{article}`.
 - The `perpage` package is loaded and `\MakePerPage{footnote}` is called.
-- Every frame with `algorithm2e` or verbatim content uses `[fragile]`.
-- No `geometry`, `cleveref`, or `natbib` packages are loaded (incompatible with beamer).
+- `\todo` is defined in the preamble as in Step 2B.
+- No argument of `\includegraphics` is a placeholder; a missing figure uses the boxed
+  `\todo{}` placeholder of Step 10B.
+- Every frame with `verbatim` or `listings` content uses `[fragile]`.
+- No `geometry`, `cleveref`, `natbib`, `todonotes`, or `subfigure` packages are loaded
+  (none is used in Beamer Mode).
 
 ### Frame Structure
 - Every `\begin{frame}` has a matching `\end{frame}`.
@@ -1653,8 +1721,15 @@ Run through all items below before delivering the final Beamer `.tex` file.
 - No frame body exceeds approximately 10 lines of display content (split if necessary).
 
 ### Footnote Citation Consistency
-- Every `\footnotemark` on a slide has a matching `\footnotetext` within the SAME frame.
-- No `\footnotetext` is present without a corresponding `\footnotemark` on the same slide.
+- Citations use `\footnote[frame]{...}` at the point of citation (Section 3B.2).
+- Where the `\footnotemark` fallback is used, every mark has exactly one `\footnotetext`
+  within the SAME frame, and no `\footnotetext` appears without its mark.
+- **MULTI-MARK CHECK (mandatory for the fallback):** in every frame that contains **two
+  or more** `\footnotemark{}` calls, each `\footnotetext` uses the **explicit `[N]`
+  form**: `\footnotetext[1]{...}`, `\footnotetext[2]{...}`, and so on. A bare
+  `\footnotetext{...}` prints the current counter value, so all texts would carry the
+  last number. This is a **silent rendering bug**: the file compiles without errors.
+- Any size reduction is written inside the footnote text (`\footnote[frame]{\tiny ...}`).
 - No bibliography section (`\begin{thebibliography}`, `\printbibliography`) is present.
 
 ### Mathematical Correctness
@@ -1671,5 +1746,10 @@ Run through all items below before delivering the final Beamer `.tex` file.
 
 ## Reference Files
 
-- `references/preamble.md` — Legacy preamble reference. The canonical preamble is now
-  embedded in Step 2. Consult only for additional macro variants not covered in Step 2.
+Both files are optional; this file is complete without them.
+
+- `references/inverse-problems.md`: notation conventions, macros (`\Forward`, `\Reg`,
+  `\Tikhonov`), and `\bibitem` entries for EIT, regularisation theory, inverse problems,
+  and PINNs. Read it when the request concerns those areas.
+- `references/preamble.md`: supplementary optimisation macros (`\argmin`, `\prox`,
+  `\dom`, `\xstar`, and others) that can be appended to the Step 2 preamble.

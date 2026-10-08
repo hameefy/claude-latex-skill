@@ -18,6 +18,7 @@ engineering. Instead of generic output, you get:
 - ✅ Correct mathematical notation (theorems, proofs, algorithms, convergence analysis)
 - ✅ Professional preamble with all packages pre-configured
 - ✅ Three modes: **Document**, **Snippet**, and **Beamer Presentation**
+- ✅ URL input: give a link and ask for a document, slides, or a snippet from that page
 
 **You do not need Claude Code. You do not need a terminal. You only need a free Claude
 account.**
@@ -292,6 +293,7 @@ Write the LaTeX for the proximal operator definition and the ISTA update rule.
 | pgfplots | compat = 1.18 or later |
 | Beamer | Any version included in TeX Live 2022 or later |
 | `perpage` package | Included in TeX Live and MiKTeX standard installations |
+| Side-by-side figures | `subcaption` (the obsolete `subfigure` package is no longer used) |
 
 ---
 
@@ -299,16 +301,52 @@ Write the LaTeX for the proximal operator definition and the ISTA update rule.
 
 ```
 claude-latex-skill/
-├── SKILL.md              # Main skill file — all production rules and preamble
+├── SKILL.md              # Main skill file: all production rules, preambles, templates
 ├── references/
-│   └── preamble.md       # Supplementary macro variants (legacy reference)
+│   ├── inverse-problems.md  # Optional: EIT, regularisation, PINNs notation and references
+│   └── preamble.md          # Optional: supplementary optimisation macros
+├── latex.skill           # Packaged bundle (SKILL.md + references/) for upload
 ├── README.md             # This file
 ├── banner.svg            # Repository banner image
 └── LICENSE               # MIT Licence
 ```
 
-The canonical preamble is embedded directly in `SKILL.md` (Step 2). The
-`references/preamble.md` file is retained for supplementary macro variants only.
+`SKILL.md` is complete on its own, so the single-file installation above continues to
+work. The two files under `references/` are optional: upload `latex.skill` (or use the
+`git clone` route and copy the whole folder) if you also want the inverse-problems
+material and the supplementary macros.
+
+---
+
+## Changelog
+
+### v2.1
+
+Every template and example in `SKILL.md` was extracted and compiled with pdfLaTeX; the
+following defects were found and corrected.
+
+- **Beamer template now compiles.** `\todo{}` was used throughout but never defined in
+  the Beamer preamble; a placeholder file name inside `\includegraphics` is replaced by a
+  boxed placeholder.
+- **`\citet{}` no longer prints "(author?)".** Every `\bibitem` now carries the `natbib`
+  label `[Authors(Year)]`.
+- **`subfigure` replaced by `subcaption`**, which is what the `subfigure` environment
+  prescribed by the skill requires.
+- **Beamer footnote citations simplified** to `\footnote[frame]{...}`; the
+  `\footnotemark`/`\footnotetext[N]` pattern is kept as a fallback with a corrected
+  explanation, and `\tiny` is placed inside the footnote text, where it takes effect.
+- **Beamer Option B** no longer loads `algorithmic` together with `algpseudocode`.
+- **Proof example corrected**: the descent inequality now uses the constant
+  $\alpha/2$, valid for every $\alpha \in (0, 1/L]$.
+- **Reference corrected**: Fan and Ying, *Communications in Mathematics and Statistics*
+  11(1), 2023.
+- Contradictory rules resolved (em dash in examples, notation for vectors, bibliography
+  default, unused macros); bibliographic entries are no longer filled in from memory
+  unless every field is certain.
+- Scope: optimisation first. EIT, regularisation, and PINNs material moved to the
+  optional `references/inverse-problems.md`. Author details in the Beamer template are
+  placeholders.
+- Step 0 (URL ingestion) added to the published `SKILL.md`; `latex.skill` rebuilt.
 
 ---
 
