@@ -3,15 +3,15 @@ name: latex
 description: >
   Produce high-quality, compilable LaTeX for researchers in computational and applied
   mathematics. Trigger for theorems, proofs, convergence analysis, algorithms, tables,
-  TikZ figures, derivations, literature reviews, or any structured academic document.
-  Also trigger for "write up", "typeset", "format in LaTeX", "produce a .tex file",
-  "generate a report", or "give me the LaTeX for". Covers numerical optimisation, deep
-  learning theory, EIT, regularisation, PINNs, and numerical analysis. Three modes:
-  (1) DOCUMENT MODE — full standalone article .tex file; (2) SNIPPET MODE — body-only
-  fragments; (3) BEAMER MODE — complete Beamer presentation slides. ALWAYS trigger
-  BEAMER MODE for "slides", "presentation", "beamer", "seminar talk", "conference talk",
-  "slide deck", or "talk on [topic]". Output is immediately compilable, mathematically
-  rigorous, and free of AI-characteristic phrasing.
+  TikZ figures, derivations, literature reviews, or structured academic documents. Also
+  trigger for "write up", "typeset", "format in LaTeX", "produce a .tex file", or "give
+  me the LaTeX for". Covers numerical optimisation, deep learning theory, EIT,
+  regularisation, PINNs, and numerical analysis. Three modes: (1) DOCUMENT MODE — full
+  standalone article; (2) SNIPPET MODE — body-only fragments; (3) BEAMER MODE — complete
+  Beamer slides. Trigger BEAMER MODE for "slides", "presentation", "beamer", "talk",
+  "seminar", "slide deck". ALSO trigger when the user supplies a website URL and wants
+  LaTeX output — e.g. "turn this link into LaTeX", "make slides from this page", or
+  "convert this article to a report". Fetches the page and routes to the correct mode.
 ---
 
 # LaTeX Skill
@@ -22,6 +22,127 @@ impedance tomography (EIT), regularisation theory, data-driven inversion, numeri
 PINNs, and related areas. All output must satisfy the mathematical standards of journals such
 as SIAM Journal on Scientific Computing, Inverse Problems, Mathematics of Computation, and
 Journal of Computational Physics.
+
+---
+
+## Step 0. Detect and Ingest Web Content (URL Input)
+
+**Run this step FIRST, before Step 1, whenever the user provides a URL or web link.**
+
+### 0.1 Detect a URL
+
+Treat the request as a URL-sourced request if the user's message contains any of the
+following patterns:
+
+- A URL beginning with `http://` or `https://`.
+- A bare domain reference such as `arxiv.org/abs/...`, `doi.org/...`, or a journal/blog
+  URL that can be resolved.
+- Phrases such as: "from this link", "from this page", "from this article", "from this
+  website", "from this paper online", "convert this URL", or "turn this link into LaTeX".
+
+If **no URL** is detected, skip Step 0 entirely and proceed directly to Step 1.
+
+### 0.2 Fetch the Page
+
+Use the `web_fetch` tool to retrieve the page. Pass the URL exactly as provided by the
+user. Use `html_extraction_method: "markdown"` to obtain clean, readable content.
+
+```
+web_fetch(url="<user-provided URL>", html_extraction_method="markdown")
+```
+
+**If the fetch fails** (network error, access denied, paywall, login wall):
+- Inform the user clearly: "I was unable to retrieve the content from `<URL>`. The page
+  may require login, be behind a paywall, or be unavailable."
+- Ask whether the user can paste the content directly into the chat.
+- Do NOT attempt to generate LaTeX from guessed or fabricated content.
+
+**If the fetch partially succeeds** (truncated content, missing sections):
+- Proceed with what was retrieved.
+- Add a `\todo{}` placeholder wherever content appears incomplete or cut off.
+- Mention to the user that the fetched content may be partial.
+
+### 0.3 Analyse and Clean the Fetched Content
+
+Once the page content is retrieved, perform the following analysis before proceeding to
+Step 1:
+
+1. **Identify the content type.** Is the page:
+   - A research paper or preprint (e.g. arXiv, journal article)?
+   - A blog post or technical article?
+   - A documentation page (e.g. library or software docs)?
+   - A lecture notes or course page?
+   - A general web article or news item?
+
+2. **Extract the core structure.** Identify:
+   - Title, authors, date/venue (if a paper or article).
+   - Abstract or executive summary (if present).
+   - Section headings and their content.
+   - Mathematical expressions, algorithms, tables, and figures (note their presence;
+     do NOT fabricate numerical values or theorems not in the source).
+   - References or citations listed on the page.
+
+3. **Filter noise.** Discard: navigation menus, cookie banners, advertisement text,
+   footer boilerplate, comment sections, and any content clearly unrelated to the
+   main article.
+
+4. **Preserve mathematics.** If the page contains mathematical notation (even in
+   informal or non-LaTeX form), transcribe it into proper LaTeX using the macros
+   defined in Step 2 / Step 2B. Do not simplify, omit, or alter mathematical content.
+
+5. **Note source metadata.** Record the following for use in the LaTeX document:
+   - Source URL (for `\url{}` or `\href{}` citation).
+   - Author name(s) if available.
+   - Publication date if available.
+   - Page or document title.
+
+   These will be used to populate the LaTeX `\title{}`, `\author{}`, `\date{}` fields
+   (Document Mode), the Beamer metadata (Beamer Mode), or an inline attribution comment
+   (Snippet Mode).
+
+### 0.4 Clarify the Output Mode (if ambiguous)
+
+After fetching and analysing the content, if the user has not explicitly stated which
+output mode they want, ask ONE clarifying question:
+
+> "I've retrieved the content from `<URL>`. Should I produce:
+> (a) a complete standalone LaTeX document (article),
+> (b) a Beamer slide presentation, or
+> (c) a LaTeX snippet (equations, tables, or algorithm only)?"
+
+If the user's original phrasing already signals the mode (e.g., "make slides from this
+link" → Beamer Mode; "typeset this article" → Document Mode; "give me the LaTeX table
+from this page" → Snippet Mode), proceed without asking.
+
+### 0.5 Hand Off to the Main Pipeline
+
+Once content is fetched, cleaned, and the output mode is known, treat the extracted
+content exactly as if the user had pasted it directly. Proceed to **Step 1** (mode
+classification) and then through the full normal pipeline (Steps 2–10 as appropriate).
+
+**Additional rules for URL-sourced content:**
+
+- **Attribution:** In Document Mode, include a comment near the top of the `.tex` file:
+  ```latex
+  % Source: <URL>
+  % Retrieved: <date of fetch>
+  ```
+  In Beamer Mode, add a `\tiny{\url{<URL>}}` citation on the title or introduction slide.
+  In Snippet Mode, add a `% Source: <URL>` comment above the snippet.
+
+- **No fabrication:** Do not invent theorems, lemmas, numerical results, or citations
+  that do not appear in the fetched content. Use `\todo{}` for any section where the
+  source content is absent or unclear.
+
+- **Copyright note:** Web content is copyrighted. The LaTeX output is a
+  **scholarly reformatting** for academic use. Do not reproduce verbatim large passages
+  of prose from the source; paraphrase into formal academic register where necessary,
+  and preserve mathematics exactly.
+
+- **arXiv and DOI links:** For arXiv links (`https://arxiv.org/abs/NNNN.NNNNN`), also
+  attempt to fetch the abstract page. The PDF itself cannot be fetched directly; if the
+  user wants full paper content, they should supply the PDF as an upload. For DOI links,
+  fetch the resolved landing page.
 
 ---
 
@@ -48,6 +169,9 @@ Beamer Mode output.
 **Content sourcing for Beamer Mode:**
 - If the user supplies a complete manuscript or paper: extract content from it faithfully
   to populate each slide section.
+- If the user supplies a URL (processed via Step 0): use the fetched and cleaned content
+  as the source manuscript. Populate slides from that content; insert `\todo{}` wherever
+  the fetched page did not provide sufficient detail for a slide.
 - If the user supplies only a title, abstract, or partial notes: generate a fully
   structured template with `\todo{}` placeholders in every slide that lacks content.
 - Never fabricate theorems, lemmas, or numerical results that were not provided.
@@ -63,6 +187,8 @@ Produce a complete, standalone `.tex` file (preamble through `\end{document}`) u
 - An algorithm presented alongside its theoretical justification.
 - An introduction, related-work survey, or structured academic section.
 - A self-contained report, technical note, or preprint draft.
+- **Content fetched from a URL (Step 0)** where the user requested a full document or
+  report format.
 
 Save the output as a `.tex` file and present it to the user for download.
 
@@ -76,6 +202,9 @@ Produce raw LaTeX body content only (no `\documentclass`, no preamble, no
 - A numerical results table.
 - A TikZ figure or pgfplots graph.
 - Any fragment intended to be inserted into the user's own template.
+- **Content fetched from a URL (Step 0)** where the user requests only specific elements
+  (e.g. "give me the LaTeX for the table on this page", "typeset just the algorithm from
+  this link").
 
 Deliver snippet output as a labelled code block in the chat, not as a file, unless the
 user explicitly requests a file.
@@ -370,7 +499,7 @@ Beamer Mode uses `\footnotemark` / `\footnotetext{}` pairs exclusively. There is
 reference section at the end of the presentation; every cited source appears as a
 footnote on the slide where it is first cited.
 
-**Citation pattern — use verbatim:**
+**SINGLE citation on a slide — use verbatim:**
 
 ```latex
 % Within slide body text, place the mark:
@@ -383,18 +512,50 @@ footnote on the slide where it is first cited.
   \textit{Math.\ Comp.}, vol.~75, no.~255, pp.~1429--1448, 2006.}
 ```
 
+**MULTIPLE citations on a single slide — CRITICAL PATTERN:**
+
+When a slide contains two or more `\footnotemark{}` calls, the auto-incremented
+counter values in the body (1, 2, 3, …) are **not automatically mirrored** by the
+corresponding `\footnotetext{}` calls at the bottom of the frame. The `perpage`
+package resets the counter between mark and text sides, so all bare `\footnotetext{}`
+entries end up labelled with the same number (the last value reached), producing
+**mismatched superscripts**.
+
+**The mandatory fix: always use `\footnotetext[N]{...}` with an explicit integer
+argument matching each `\footnotemark{}` call when there are two or more citations
+on one slide.**
+
+```latex
+% Body — three \footnotemark{} calls auto-increment to 1, 2, 3:
+\textbf{Method A}\footnotemark{} — description of A.
+\textbf{Method B}\footnotemark{} — description of B.
+\textbf{Method C}\footnotemark{} — description of C.
+
+% Before \end{frame} — explicit [N] REQUIRED for 2+ citations:
+\footnotetext[1]{Author A, ``Title A,'' \textit{Journal}, vol., pp., Year.}
+\footnotetext[2]{Author B, ``Title B,'' \textit{Journal}, vol., pp., Year.}
+\footnotetext[3]{Author C, ``Title C,'' \textit{Journal}, vol., pp., Year.}
+```
+
+This rule applies for **any slide with 2 or more citations**, regardless of layout
+(single-column, two-column, columns environment, blocks, etc.).
+
 Rules for footnote citations:
 1. Every `\footnotemark` must have a matching `\footnotetext` within the same `frame`.
 2. Use `\MakePerPage{footnote}` (already in the preamble) so the counter resets per slide.
-3. If more than two references appear on one slide, consider splitting the slide or using
-   a smaller font for the `\footnotetext` entries: `{\tiny \footnotetext{...}}`.
+3. **Single citation on a slide:** use bare `\footnotetext{...}` (no `[N]`).
+   **Two or more citations on a slide:** use `\footnotetext[N]{...}` with explicit `N`
+   matching the auto-incremented mark value. **Never use bare `\footnotetext{}` when
+   multiple citations appear on the same slide — the numbers will all be wrong.**
 4. Format: Author(s), ``Title,'' \textit{Journal/Proceedings}, vol., no., pp., Year.
    For books: Author(s), \textit{Title}, Publisher, Year.
 5. Never list a reference in a `\footnotetext` that does not have a corresponding
    `\footnotemark` on the same slide.
-6. If the user provides BibTeX keys without full details, supply the correct bibliographic
+6. If more than three references appear on one slide, use `{\tiny \footnotetext[N]{...}}`
+   for all entries on that slide to prevent the footnote area from overflowing.
+7. If the user provides BibTeX keys without full details, supply the correct bibliographic
    entry from knowledge of the standard literature. If genuinely ambiguous, insert:
-   `\footnotetext{\todo{Fill in full bibliographic details.}}`
+   `\footnotetext[N]{\todo{Fill in full bibliographic details.}}`
 
 ### 3B.3 Theorem-like Blocks
 
@@ -1656,6 +1817,13 @@ Run through all items below before delivering the final Beamer `.tex` file.
 - Every `\footnotemark` on a slide has a matching `\footnotetext` within the SAME frame.
 - No `\footnotetext` is present without a corresponding `\footnotemark` on the same slide.
 - No bibliography section (`\begin{thebibliography}`, `\printbibliography`) is present.
+- **MULTI-CITATION CHECK (mandatory):** For every frame that contains **two or more**
+  `\footnotemark{}` calls, verify that every corresponding `\footnotetext` uses the
+  **explicit `[N]` form** — i.e., `\footnotetext[1]{...}`, `\footnotetext[2]{...}`,
+  etc. Bare `\footnotetext{...}` (without `[N]`) on a multi-citation slide causes all
+  footnote labels to display the same number due to counter reset by `perpage`. This is
+  a **silent rendering bug** — the file compiles without errors but the superscripts in
+  the body and the numbers in the footnote area are mismatched.
 
 ### Mathematical Correctness
 - All macros used in the body are defined in the preamble.
